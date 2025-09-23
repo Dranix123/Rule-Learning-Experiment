@@ -57,7 +57,7 @@
             background-color: #4b5563;
         }
 
-        /* 实验二拖拽样式 */
+        /* 实验二拖拽样式 (已修改) */
         .draggable-item {
             padding: 0.75rem;
             margin: 0.5rem 0;
@@ -74,16 +74,35 @@
         .drop-zone {
             display: flex;
             align-items: center;
-            min-height: 5rem; /* 确保有足够的高度放置条目 */
+            min-height: 5rem; /* 确保空的放置区有足够的高度 */
             padding: 0.75rem;
             margin: 0.5rem 0;
             background-color: #e5e7eb;
             border: 2px dashed #9ca3af;
             border-radius: 0.5rem;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, border-style 0.3s, border-color 0.3s, border-width 0.3s;
         }
         .drop-zone.over {
             background-color: #c7d2fe;
+        }
+
+        /* 当放置区内有项目时，改变放置区的样式，使其看起来像一个实心项目 */
+        .drop-zone:has(.draggable-item) {
+            background-color: #f3f4f6; /* 与可拖动项背景色相同 */
+            border-style: solid;
+            border-width: 1px;
+            border-color: #d1d5db; /* 与可拖动项边框色相同 */
+            min-height: auto; /* 高度自适应内容 */
+        }
+        
+        /* 放置区内的项目不再需要自己的内边距和背景，以避免双重样式导致“放大” */
+        .drop-zone .draggable-item {
+            padding: 0;
+            margin: 0;
+            background-color: transparent;
+            border: none;
+            flex: 1; /* 占据剩余空间 */
+            min-width: 0; /* 修复长文本在flex布局下的溢出问题 */
         }
     </style>
 </head>
@@ -257,7 +276,7 @@
 
     <!-- Page 9: Experiment 2 Formal -->
     <div id="page-exp2-formal" class="page hidden">
-        <div class="content-card !max-w-4xl">
+        <div class="content-card !max-w-7xl">
              <p class="text-md text-gray-600 mb-4">请将下列项目拖拽到右侧方框中，进行<strong>由多到少</strong>排序（1为消耗最多）。</p>
             <div class="flex flex-col md:flex-row gap-6">
                 <!-- Draggable items container -->
@@ -289,6 +308,14 @@
                 <h3 class="font-bold mb-2">原始数据 (JSON)</h3>
                 <pre id="final-data-display" class="text-xs whitespace-pre-wrap"></pre>
             </div>
+        </div>
+    </div>
+
+    <!-- Debug Menu -->
+    <div id="debug-menu" class="hidden fixed top-4 left-4 bg-white p-4 rounded-lg shadow-xl z-50 border">
+        <h3 class="font-bold mb-2 text-gray-800">调试菜单 (按 'm' 键切换)</h3>
+        <div id="debug-page-list" class="flex flex-col gap-2 items-start">
+            <!-- Page links will be inserted here by JS -->
         </div>
     </div>
 
@@ -784,7 +811,72 @@
 
             // Add listeners for download
             document.getElementById('download-data-btn').addEventListener('click', downloadData);
-            window.addEventListener('keydown', downloadData);
+            const downloadKeyListener = (e) => {
+                 // Prevent download if debug menu is triggered or if typing in an input.
+                if (e.key !== 'm' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT') {
+                    downloadData();
+                    window.removeEventListener('keydown', downloadKeyListener); // Remove after use
+                }
+            };
+            window.addEventListener('keydown', downloadKeyListener);
+        }
+
+        // --- DEBUG MODE ---
+        function setupDebugMode() {
+            const debugMenu = document.getElementById('debug-menu');
+            const debugPageList = document.getElementById('debug-page-list');
+            if (!debugMenu || !debugPageList) return;
+
+            // Populate the menu with buttons for each page
+            pages.forEach(page => {
+                const pageId = page.id;
+                const button = document.createElement('button');
+                button.textContent = pageId;
+                button.className = 'bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 border border-gray-400 rounded shadow w-full text-left';
+                
+                button.addEventListener('click', () => {
+                     // If experiment hasn't started, fill in dummy data
+                    if (!participantData.startTime) {
+                        participantData.id = 'debug_user';
+                        participantData.age = 99;
+                        participantData.gender = 'other';
+                        participantData.startTime = performance.now();
+                        logEvent('Experiment Start (Debug)');
+                        startMouseTracking();
+                    }
+
+                    // Handle pages that require specific setup functions
+                    if (pageId === 'page-exp1-formal') {
+                        showPage(pageId);
+                        runExp1Trial();
+                    } else if (pageId === 'page-exp2-formal') {
+                         // Only setup if it hasn't been done yet
+                        if (document.getElementById('draggable-container').children.length === 0) {
+                            setupExp2();
+                        }
+                        showPage(pageId);
+                    } else {
+                        showPage(pageId);
+                    }
+                    
+                    // Hide menu after selection
+                    debugMenu.classList.add('hidden');
+                });
+                debugPageList.appendChild(button);
+            });
+
+            // Add key listener to toggle the debug menu visibility
+            window.addEventListener('keydown', (e) => {
+                // Do not trigger if the user is typing in an input field
+                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') {
+                    return;
+                }
+
+                if (e.key === 'm') {
+                    e.preventDefault(); // Prevent typing 'm' character
+                    debugMenu.classList.toggle('hidden');
+                }
+            });
         }
 
         // --- INITIALIZATION ---
@@ -792,10 +884,10 @@
             // Set performance.now() as the relative zero point.
             participantData.log.push({ event: 'Script Loaded', timestamp: performance.now(), page: 'N/A' });
             showPage('page-demographics');
+            setupDebugMode(); // Initialize debug mode
         };
 
     </script>
 </body>
 </html>
-
 

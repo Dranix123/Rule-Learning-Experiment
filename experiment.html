@@ -281,6 +281,8 @@
         <div class="content-card">
             <h1 class="text-3xl font-bold text-green-600 mb-6">实验结束</h1>
             <p class="text-lg">感谢您的参与！</p>
+            <p class="text-gray-600 my-4">您可以点击下方按钮或按键盘上任意键下载您的实验数据。</p>
+            <button id="download-data-btn" class="btn">下载数据</button>
             <p class="text-sm text-gray-500 mt-8">您可以关闭此页面。所有数据已记录。</p>
             <!-- Data display for experimenter (optional) -->
             <div class="mt-8 text-left max-h-96 overflow-y-auto bg-gray-50 p-4 rounded-md border hidden">
@@ -351,6 +353,7 @@
         const stimulusContainer = document.getElementById('stimulus-container');
         const choiceButtons = document.getElementById('choice-buttons');
         let currentlyDragged = null;
+        let dataDownloaded = false;
 
 
         // --- UTILITY FUNCTIONS ---
@@ -667,6 +670,35 @@
 
 
         // --- PAGE 10: END ---
+        function downloadData() {
+            if (dataDownloaded) return; // Prevent multiple downloads
+            dataDownloaded = true;
+
+            const participantId = participantData.id || 'unknown_id';
+            const timestamp = new Date().getTime();
+            const filename = `data_${participantId}_${timestamp}.json`;
+
+            const dataStr = JSON.stringify(participantData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json;charset=utf-8,' });
+
+            const downloadLink = document.createElement('a');
+            downloadLink.href = URL.createObjectURL(dataBlob);
+            downloadLink.download = filename;
+
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(downloadLink.href);
+
+            logEvent('Data Downloaded');
+
+            const downloadBtn = document.getElementById('download-data-btn');
+            if (downloadBtn) {
+                downloadBtn.textContent = '数据已下载';
+                downloadBtn.disabled = true;
+            }
+        }
+
         function endExperiment() {
             stopMouseTracking();
             participantData.endTime = performance.now();
@@ -678,6 +710,10 @@
             console.log(JSON.stringify(participantData, null, 2));
             document.getElementById('final-data-display').textContent = JSON.stringify(participantData, null, 2);
             document.getElementById('final-data-display').parentElement.classList.remove('hidden');
+
+            // Add listeners for download
+            document.getElementById('download-data-btn').addEventListener('click', downloadData);
+            window.addEventListener('keydown', downloadData);
         }
 
         // --- INITIALIZATION ---
@@ -690,3 +726,4 @@
     </script>
 </body>
 </html>
+

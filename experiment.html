@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心理学决策行为实验</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 自定义样式 */
+        body {
+            font-family: 'Inter', 'Helvetica Neue', 'Arial', 'sans-serif';
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .page {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+        .content-card {
+            background-color: white;
+            border-radius: 1rem;
+            padding: 2.5rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #3b82f6;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: none;
+            margin: 0.5rem;
+        }
+        .btn:hover {
+            background-color: #2563eb;
+        }
+        .btn:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background-color: #6b7280;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+
+        /* 实验二拖拽样式 */
+        .draggable-item {
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            cursor: grab;
+            user-select: none;
+        }
+        .draggable-item.dragging {
+            opacity: 0.5;
+            background-color: #dbeafe;
+        }
+        .drop-zone {
+            display: flex;
+            align-items: center;
+            min-height: 5rem; /* 确保有足够的高度放置条目 */
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background-color: #e5e7eb;
+            border: 2px dashed #9ca3af;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s;
+        }
+        .drop-zone.over {
+            background-color: #c7d2fe;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Page 1: Demographics -->
+    <div id="page-demographics" class="page">
+        <div class="content-card">
+            <h1 class="text-2xl font-bold mb-6">欢迎参与实验</h1>
+            <p class="mb-6 text-gray-600">在开始之前，请填写以下信息。</p>
+            <div class="space-y-4 text-left">
+                <div>
+                    <label for="participant-id" class="block text-sm font-medium text-gray-700">被试ID:</label>
+                    <input type="text" id="participant-id" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="age" class="block text-sm font-medium text-gray-700">年龄:</label>
+                    <input type="number" id="age" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="gender" class="block text-sm font-medium text-gray-700">性别:</label>
+                    <select id="gender" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">请选择</option>
+                        <option value="male">男</option>
+                        <option value="female">女</option>
+                        <option value="other">其他</option>
+                    </select>
+                </div>
+            </div>
+            <button id="start-btn" class="btn mt-8">下一步</button>
+        </div>
+    </div>
+
+    <!-- Page 2: Informed Consent -->
+    <div id="page-consent" class="page hidden">
+        <div class="content-card">
+            <h1 class="text-2xl font-bold mb-6">知情同意书</h1>
+            <div class="text-left space-y-4 max-h-96 overflow-y-auto p-4 border rounded-md bg-gray-50">
+                <p>这里是知情同意书的详细内容...</p>
+                <p>1. 实验目的：本研究旨在探讨人类在不同社会情境下的决策行为模式。</p>
+                <p>2. 实验过程：您将参与两个部分的任务。第一部分是模拟社会互动决策任务，第二部分是对抽象概念进行排序的任务。整个实验大约需要15-20分钟。</p>
+                <p>3. 风险与不适：本实验不存在已知的生理或心理风险。</p>
+                <p>4. 隐私保护：您的个人信息将被严格保密。所有数据将以匿名形式进行处理和分析，仅用于科学研究目的。</p>
+                <p>5. 自由退出：您可以随时无理由地退出实验，且不会有任何负面影响。</p>
+                <p>如果您理解并同意以上条款，请勾选下方选项并继续。</p>
+            </div>
+            <div class="mt-6 flex items-center justify-center">
+                <input type="checkbox" id="consent-checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                <label for="consent-checkbox" class="ml-2 block text-sm text-gray-900">我已阅读、理解并同意参与本实验。</label>
+            </div>
+            <button id="consent-btn" class="btn mt-6" disabled>下一步</button>
+        </div>
+    </div>
+
+    <!-- Page 3: Experiment 1 Instructions -->
+    <div id="page-exp1-instructions" class="page hidden">
+        <div class="content-card">
+            <h1 class="text-2xl font-bold mb-6">实验一：指导语</h1>
+            <div class="text-left space-y-4">
+                <p>接下来你将看到不同情境下有不同情绪的不同人，你需要选择<strong>接近</strong>或是<strong>远离</strong>他们。</p>
+                <p>你初始有<strong>4枚</strong>硬币。</p>
+                <p>特定条件组合下，如果你选择<strong>接近</strong>，他们可能会给你一枚硬币或拿走你的两枚硬币（这个结果在相同条件下是一致的）。</p>
+                <p>如果你选择<strong>远离</strong>，则你的硬币数量没有任何变化。</p>
+                <p>你的目标是在结束时获得<strong>尽可能多</strong>的硬币。</p>
+            </div>
+            <button id="exp1-instr-btn" class="btn mt-8">我明白了，检查一下</button>
+        </div>
+    </div>
+
+    <!-- Page 4: Experiment 1 Comprehension Check -->
+    <div id="page-exp1-check" class="page hidden">
+        <div class="content-card">
+            <h1 class="text-2xl font-bold mb-6">理解测试</h1>
+            <div class="text-left space-y-6">
+                <div class="question-group">
+                    <p class="font-semibold">1. 你的初始硬币是多少？</p>
+                    <div class="space-y-2 mt-2">
+                        <div><label><input type="radio" name="q1" value="0"> 0</label></div>
+                        <div><label><input type="radio" name="q1" value="4"> 4</label></div>
+                        <div><label><input type="radio" name="q1" value="10"> 10</label></div>
+                    </div>
+                </div>
+                <div class="question-group">
+                    <p class="font-semibold">2. 如果你选择“远离”，你的硬币会发生什么变化？</p>
+                    <div class="space-y-2 mt-2">
+                        <div><label><input type="radio" name="q2" value="gain"> 可能会增加</label></div>
+                        <div><label><input type="radio" name="q2" value="lose"> 可能会减少</label></div>
+                        <div><label><input type="radio" name="q2" value="no_change"> 没有变化</label></div>
+                    </div>
+                </div>
+                 <div class="question-group">
+                    <p class="font-semibold">3. 你的目标是什么？</p>
+                    <div class="space-y-2 mt-2">
+                        <div><label><input type="radio" name="q3" value="fast"> 尽快完成</label></div>
+                        <div><label><input type="radio" name="q3" value="max_coins"> 获得尽可能多的硬币</label></div>
+                        <div><label><input type="radio" name="q3" value="min_coins"> 获得尽可能少的硬币</label></div>
+                    </div>
+                </div>
+            </div>
+            <p id="exp1-check-error" class="text-red-500 mt-4 hidden">回答有误，请仔细阅读指导语。</p>
+            <button id="exp1-check-btn" class="btn mt-6">提交</button>
+        </div>
+    </div>
+
+    <!-- Page 5: Experiment 1 Formal -->
+    <div id="page-exp1-formal" class="page hidden">
+        <div class="content-card">
+            <div class="w-full flex justify-between items-center mb-6">
+                <p class="text-sm text-gray-500">摘要：接近可能获得或失去硬币，远离无变化。</p>
+                <p class="text-lg font-bold">当前硬币: <span id="coin-count">4</span></p>
+            </div>
+            <div id="stimulus-container" class="w-full h-80 bg-gray-200 rounded-lg flex justify-center items-center text-gray-500 text-xl font-semibold">
+                <!-- 刺激将在这里显示 -->
+            </div>
+            <div id="choice-buttons" class="mt-8">
+                <button id="approach-btn" class="btn">接近</button>
+                <button id="avoid-btn" class="btn btn-secondary">远离</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 6: Experiment 1 Break -->
+    <div id="page-exp1-break" class="page hidden">
+        <div class="content-card">
+            <h1 class="text-2xl font-bold mb-6">第一部分结束</h1>
+            <p class="text-lg mb-4">你最终获得了 <span id="final-coin-count" class="font-bold"></span> 个硬币。</p>
+            <p class="text-gray-600 mb-8">休息一下，准备好后请点击按钮继续。</p>
+            <button id="to-exp2-btn" class="btn">继续实验二</button>
+        </div>
+    </div>
+
+    <!-- Page 7: Experiment 2 Instructions -->
+    <div id="page-exp2-instructions" class="page hidden">
+        <div class="content-card">
+            <h1 class="text-2xl font-bold mb-6">实验二：指导语</h1>
+            <div class="text-left space-y-4">
+                <p>假设在一个世界中，人们有一种心灵魔力，并能用心灵魔力在一定程度上操纵他人的心灵，但不同的操纵方式消耗的心灵魔力不同。</p>
+                <p>接下来，你将看到十种操纵心灵的方式。</p>
+                <p>请你根据你的直觉判断，对它们可能<strong>消耗心灵魔力的多少</strong>进行<strong>由多到少</strong>的排序。</p>
+            </div>
+            <button id="exp2-instr-btn" class="btn mt-8">我明白了，检查一下</button>
+        </div>
+    </div>
+
+    <!-- Page 8: Experiment 2 Comprehension Check -->
+    <div id="page-exp2-check" class="page hidden">
+        <div class="content-card">
+            <h1 class="text-2xl font-bold mb-6">理解测试</h1>
+             <div class="text-left space-y-6">
+                <div class="question-group">
+                    <p class="font-semibold">1. 在这个任务中，你需要做什么？</p>
+                    <div class="space-y-2 mt-2">
+                        <div><label><input type="radio" name="q2-1" value="a"> 对十种魔力进行评分</label></div>
+                        <div><label><input type="radio" name="q2-1" value="b"> 对十种魔力按消耗的多少排序</label></div>
+                        <div><label><input type="radio" name="q2-1" value="c"> 选择你最喜欢的一种魔力</label></div>
+                    </div>
+                </div>
+                <div class="question-group">
+                    <p class="font-semibold">2. 排序的顺序是什么？</p>
+                    <div class="space-y-2 mt-2">
+                        <div><label><input type="radio" name="q2-2" value="a"> 从消耗最少到最多</label></div>
+                        <div><label><input type="radio" name="q2-2" value="b"> 随机排序</label></div>
+                        <div><label><input type="radio" name="q2-2" value="c"> 从消耗最多到最少</label></div>
+                    </div>
+                </div>
+            </div>
+            <p id="exp2-check-error" class="text-red-500 mt-4 hidden">回答有误，请仔细阅读指导语。</p>
+            <button id="exp2-check-btn" class="btn mt-6">提交</button>
+        </div>
+    </div>
+
+    <!-- Page 9: Experiment 2 Formal -->
+    <div id="page-exp2-formal" class="page hidden">
+        <div class="content-card !max-w-4xl">
+             <p class="text-md text-gray-600 mb-4">请将下列项目拖拽到右侧方框中，进行<strong>由多到少</strong>排序（1为消耗最多）。</p>
+            <div class="flex flex-col md:flex-row gap-6">
+                <!-- Draggable items container -->
+                <div id="draggable-container" class="w-full md:w-1/2 border rounded-lg p-2">
+                    <!-- Draggable items will be populated here by JS -->
+                </div>
+
+                <!-- Drop zones container -->
+                <div class="w-full md:w-1/2">
+                    <div id="drop-zone-container">
+                    <!-- Drop zones will be populated here by JS -->
+                    </div>
+                </div>
+            </div>
+            <button id="confirm-ranking-btn" class="btn mt-8">当你排序完成后点击确定</button>
+        </div>
+    </div>
+
+    <!-- Page 10: End -->
+    <div id="page-end" class="page hidden">
+        <div class="content-card">
+            <h1 class="text-3xl font-bold text-green-600 mb-6">实验结束</h1>
+            <p class="text-lg">感谢您的参与！</p>
+            <p class="text-sm text-gray-500 mt-8">您可以关闭此页面。所有数据已记录。</p>
+            <!-- Data display for experimenter (optional) -->
+            <div class="mt-8 text-left max-h-96 overflow-y-auto bg-gray-50 p-4 rounded-md border hidden">
+                <h3 class="font-bold mb-2">原始数据 (JSON)</h3>
+                <pre id="final-data-display" class="text-xs whitespace-pre-wrap"></pre>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- GLOBAL STATE ---
+        let currentPage = 'page-demographics';
+        const participantData = {
+            id: null,
+            age: null,
+            gender: null,
+            startTime: null,
+            endTime: null,
+            log: [],
+            exp1: {
+                trials: [],
+                finalCoins: 0
+            },
+            exp2: {
+                ranking: [],
+                dragEvents: []
+            },
+            mouseTrajectory: []
+        };
+        let mouseTrackerInterval;
+        let lastMousePosition = { x: 0, y: 0 };
+        let coins = 4;
+        let exp1TrialIndex = 0;
+
+        // --- EXPERIMENT 1 CONFIG ---
+        const exp1Stimuli = {
+            'zaff1': { type: 'zaff', outcome: 1, text: "图片刺激: zaff1" },
+            'zaff2': { type: 'zaff', outcome: 1, text: "图片刺激: zaff2" },
+            'zaff3': { type: 'zaff', outcome: 1, text: "图片刺激: zaff3" },
+            'nonzaff4': { type: 'nonzaff', outcome: -2, text: "图片刺激: nonzaff4" }
+        };
+        // A pre-generated trial order satisfying the Latin Square and no-repeat constraints.
+        const exp1TrialOrder = [
+            'zaff1', 'nonzaff4', 'zaff2', 'zaff3',
+            'nonzaff4', 'zaff1', 'zaff3', 'zaff2',
+            'zaff2', 'zaff3', 'nonzaff4', 'zaff1',
+            'zaff3', 'zaff2', 'zaff1', 'nonzaff4'
+        ];
+
+        // --- EXPERIMENT 2 CONFIG ---
+        const exp2Items = [
+            { id: 'item-1', text: '1. 让目标情绪产生的速度变慢，比如原本考试满分立刻感到狂喜，现在得知此消息后在十分钟内慢慢由微弱的开心到大笑再到狂喜（情境完全一样）' },
+            { id: 'item-2', text: '2. 在一个强烈的情境下，将个体应有的情绪转为同效价维度其他情绪？例如由惊恐转为厌恶' },
+            { id: 'item-3', text: '3. 在目标正体验一种强烈情绪（如热恋）时，瞬间将其完全清除，使其内心归于绝对的平静。' },
+            { id: 'item-4', text: '4. 将目标已有的某种情绪，在性质不变的情况下，等比例增强其强度（例如，将微小的烦躁增强为愤怒）。' },
+            { id: 'item-5', text: '5. 在一个完全中性、无任何刺激的情境下，让目标体验到一种强烈的、无缘由的复杂情绪（如乡愁）。' },
+            { id: 'item-6', text: '6. 让目标针对同一件事，在同一瞬间体验到两种同样强烈或都较弱的同效价维度情绪（例如，对毕业既感到悲伤又感到愤怒）' },
+            { id: 'item-7', text: '7. 1小时内定格对象的情绪，无论之后情境怎么变，对象的情绪都不会变' },
+            { id: 'item-8', text: '8. 在目标现有情绪的基调上，增添一抹细微的“色彩”（例如，在“开心”的情绪上，增添一丝“得意”的感觉）。' },
+            { id: 'item-9', text: '9. 强行将目标一种正在体验的情绪转入潜意识，使其意识层面感觉不到，但情绪本身仍对行为产生潜在影响。' },
+            { id: 'item-10', text: '10. 让目标的情绪产生的时间间断性延后，比如原本考试满分立刻感到狂喜，现在得知此消息后十分钟后才狂喜（情境完全一致）' }
+        ];
+
+        // --- DOM ELEMENTS ---
+        const pages = document.querySelectorAll('.page');
+        const coinCountEl = document.getElementById('coin-count');
+        const stimulusContainer = document.getElementById('stimulus-container');
+        const choiceButtons = document.getElementById('choice-buttons');
+        let currentlyDragged = null;
+
+
+        // --- UTILITY FUNCTIONS ---
+        function logEvent(eventName, details = {}) {
+            const logEntry = {
+                event: eventName,
+                timestamp: performance.now(),
+                page: currentPage,
+                details: details
+            };
+            participantData.log.push(logEntry);
+            // console.log(`LOG: ${eventName}`, logEntry); // For debugging
+        }
+
+        function showPage(pageId) {
+            pages.forEach(page => page.classList.add('hidden'));
+            document.getElementById(pageId).classList.remove('hidden');
+            currentPage = pageId;
+            logEvent('Page shown', { pageId });
+        }
+
+        // --- MOUSE TRACKING ---
+        function startMouseTracking() {
+            document.addEventListener('mousemove', (e) => {
+                lastMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            mouseTrackerInterval = setInterval(() => {
+                participantData.mouseTrajectory.push({
+                    x: lastMousePosition.x,
+                    y: lastMousePosition.y,
+                    timestamp: performance.now()
+                });
+            }, 1000 / 30); // ~30Hz
+        }
+
+        function stopMouseTracking() {
+            clearInterval(mouseTrackerInterval);
+            document.removeEventListener('mousemove', (e) => {
+                lastMousePosition = { x: e.clientX, y: e.clientY };
+            });
+        }
+
+        // --- PAGE 1: DEMOGRAPHICS ---
+        document.getElementById('start-btn').addEventListener('click', () => {
+            const id = document.getElementById('participant-id').value;
+            const age = document.getElementById('age').value;
+            const gender = document.getElementById('gender').value;
+
+            if (!id || !age || !gender) {
+                alert('请填写所有信息。');
+                return;
+            }
+            participantData.id = id;
+            participantData.age = age;
+            participantData.gender = gender;
+            participantData.startTime = performance.now();
+            
+            logEvent('Experiment Start');
+            startMouseTracking();
+            showPage('page-consent');
+        });
+
+        // --- PAGE 2: CONSENT ---
+        const consentCheckbox = document.getElementById('consent-checkbox');
+        const consentBtn = document.getElementById('consent-btn');
+        consentCheckbox.addEventListener('change', () => {
+            consentBtn.disabled = !consentCheckbox.checked;
+        });
+        consentBtn.addEventListener('click', () => {
+            if (consentCheckbox.checked) {
+                showPage('page-exp1-instructions');
+            }
+        });
+
+        // --- PAGE 3: EXP 1 INSTRUCTIONS ---
+        document.getElementById('exp1-instr-btn').addEventListener('click', () => {
+            showPage('page-exp1-check');
+        });
+
+        // --- PAGE 4: EXP 1 CHECK ---
+        document.getElementById('exp1-check-btn').addEventListener('click', () => {
+            const q1 = document.querySelector('input[name="q1"]:checked')?.value;
+            const q2 = document.querySelector('input[name="q2"]:checked')?.value;
+            const q3 = document.querySelector('input[name="q3"]:checked')?.value;
+            const errorEl = document.getElementById('exp1-check-error');
+
+            if (q1 === '4' && q2 === 'no_change' && q3 === 'max_coins') {
+                errorEl.classList.add('hidden');
+                logEvent('Exp1 Comprehension Check Passed');
+                showPage('page-exp1-formal');
+                runExp1Trial();
+            } else {
+                errorEl.classList.remove('hidden');
+                logEvent('Exp1 Comprehension Check Failed');
+                setTimeout(() => {
+                    errorEl.classList.add('hidden');
+                    showPage('page-exp1-instructions');
+                }, 2000);
+            }
+        });
+
+        // --- PAGE 5: EXP 1 FORMAL ---
+        function runExp1Trial() {
+            if (exp1TrialIndex >= exp1TrialOrder.length) {
+                endExp1();
+                return;
+            }
+
+            const stimulusId = exp1TrialOrder[exp1TrialIndex];
+            const stimulus = exp1Stimuli[stimulusId];
+            
+            stimulusContainer.textContent = stimulus.text;
+            stimulusContainer.innerHTML = `<div class="p-4">${stimulus.text}</div>`; // Placeholder for actual image
+            choiceButtons.classList.remove('hidden');
+
+            const trialData = {
+                trial_index: exp1TrialIndex + 1,
+                stimulus: stimulusId,
+                start_time: performance.now(),
+                choice: null,
+                rt: null,
+                outcome: null,
+                coins_before: coins,
+                coins_after: null
+            };
+
+            logEvent('Stimulus Presented', { trial: trialData.trial_index, stimulus: stimulusId });
+
+            const handleChoice = (choice) => {
+                // Remove listeners to prevent multiple clicks
+                document.getElementById('approach-btn').removeEventListener('click', approachHandler);
+                document.getElementById('avoid-btn').removeEventListener('click', avoidHandler);
+
+                trialData.choice = choice;
+                trialData.rt = performance.now() - trialData.start_time;
+                choiceButtons.classList.add('hidden');
+                let outcome = 0;
+                let feedbackText = '';
+
+                if (choice === 'approach') {
+                    outcome = stimulus.outcome;
+                    coins += outcome;
+                    feedbackText = outcome > 0 ? `对方给了你 ${outcome} 个硬币` : `对方拿走了你 ${-outcome} 个硬币`;
+                } else { // 'avoid'
+                    feedbackText = '你的硬币没有变化';
+                }
+                
+                trialData.outcome = outcome;
+                trialData.coins_after = coins;
+                participantData.exp1.trials.push(trialData);
+                logEvent('Decision Made', trialData);
+
+                coinCountEl.textContent = coins;
+                stimulusContainer.innerHTML = `<div class="p-4 text-2xl font-bold">${feedbackText}</div>`;
+
+                setTimeout(() => {
+                    exp1TrialIndex++;
+                    runExp1Trial();
+                }, 1000); // 1-second feedback duration
+            };
+            
+            const approachHandler = () => handleChoice('approach');
+            const avoidHandler = () => handleChoice('avoid');
+
+            document.getElementById('approach-btn').addEventListener('click', approachHandler);
+            document.getElementById('avoid-btn').addEventListener('click', avoidHandler);
+        }
+        
+        function endExp1() {
+            logEvent('Experiment 1 Ended');
+            participantData.exp1.finalCoins = coins;
+            document.getElementById('final-coin-count').textContent = coins;
+            showPage('page-exp1-break');
+        }
+
+        // --- PAGE 6: EXP 1 BREAK ---
+        document.getElementById('to-exp2-btn').addEventListener('click', () => {
+            showPage('page-exp2-instructions');
+        });
+        
+        // --- PAGE 7: EXP 2 INSTRUCTIONS ---
+        document.getElementById('exp2-instr-btn').addEventListener('click', () => {
+            showPage('page-exp2-check');
+        });
+        
+        // --- PAGE 8: EXP 2 CHECK ---
+        document.getElementById('exp2-check-btn').addEventListener('click', () => {
+             const q1 = document.querySelector('input[name="q2-1"]:checked')?.value;
+             const q2 = document.querySelector('input[name="q2-2"]:checked')?.value;
+             const errorEl = document.getElementById('exp2-check-error');
+
+             if (q1 === 'b' && q2 === 'c') {
+                errorEl.classList.add('hidden');
+                logEvent('Exp2 Comprehension Check Passed');
+                showPage('page-exp2-formal');
+                setupExp2();
+             } else {
+                errorEl.classList.remove('hidden');
+                logEvent('Exp2 Comprehension Check Failed');
+                setTimeout(() => {
+                    errorEl.classList.add('hidden');
+                    showPage('page-exp2-instructions');
+                }, 2000);
+             }
+        });
+
+        // --- PAGE 9: EXP 2 FORMAL ---
+        function setupExp2() {
+            const draggableContainer = document.getElementById('draggable-container');
+            const dropZoneContainer = document.getElementById('drop-zone-container');
+            
+            // Shuffle items before displaying
+            const shuffledItems = [...exp2Items].sort(() => Math.random() - 0.5);
+
+            shuffledItems.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.id = item.id;
+                itemEl.textContent = item.text;
+                itemEl.className = 'draggable-item';
+                itemEl.draggable = true;
+                draggableContainer.appendChild(itemEl);
+            });
+
+            for (let i = 1; i <= 10; i++) {
+                const zone = document.createElement('div');
+                zone.className = 'drop-zone';
+                zone.dataset.rank = i;
+                zone.innerHTML = `<span class="font-bold text-lg mr-4 text-gray-500 w-8">${i}.</span>`;
+                dropZoneContainer.appendChild(zone);
+            }
+            
+            addDragAndDropListeners();
+        }
+
+        function addDragAndDropListeners() {
+            const draggables = document.querySelectorAll('.draggable-item');
+            const dropZones = document.querySelectorAll('.drop-zone');
+
+            draggables.forEach(draggable => {
+                draggable.addEventListener('dragstart', (e) => {
+                    draggable.classList.add('dragging');
+                    currentlyDragged = draggable;
+                    logEvent('Exp2 Drag Start', { itemId: draggable.id });
+                });
+                draggable.addEventListener('dragend', () => {
+                    draggable.classList.remove('dragging');
+                    logEvent('Exp2 Drag End', { itemId: currentlyDragged.id });
+                    currentlyDragged = null;
+                });
+            });
+
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    zone.classList.add('over');
+                });
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('over');
+                });
+                zone.addEventListener('drop', e => {
+                    e.preventDefault();
+                    zone.classList.remove('over');
+                    
+                    // If zone already has an item, move it back to the list
+                    const existingItem = zone.querySelector('.draggable-item');
+                    if (existingItem) {
+                        document.getElementById('draggable-container').appendChild(existingItem);
+                    }
+                    
+                    if (currentlyDragged) {
+                        zone.appendChild(currentlyDragged);
+                    }
+                });
+            });
+            
+            // Allow dropping back into the original container
+            const draggableContainer = document.getElementById('draggable-container');
+            draggableContainer.addEventListener('dragover', e => e.preventDefault());
+            draggableContainer.addEventListener('drop', e => {
+                 e.preventDefault();
+                 if (currentlyDragged) {
+                     draggableContainer.appendChild(currentlyDragged);
+                 }
+            });
+        }
+        
+        document.getElementById('confirm-ranking-btn').addEventListener('click', () => {
+            const rankedItems = [];
+            const dropZones = document.querySelectorAll('.drop-zone');
+            let allRanked = true;
+            
+            dropZones.forEach(zone => {
+                const item = zone.querySelector('.draggable-item');
+                if (item) {
+                    rankedItems.push({
+                        rank: parseInt(zone.dataset.rank),
+                        itemId: item.id,
+                        text: item.textContent
+                    });
+                } else {
+                    allRanked = false;
+                }
+            });
+
+            if (!allRanked) {
+                alert('请将所有项目都排序。');
+                return;
+            }
+
+            participantData.exp2.ranking = rankedItems;
+            logEvent('Exp2 Ranking Confirmed', { ranking: rankedItems });
+            endExperiment();
+        });
+
+
+        // --- PAGE 10: END ---
+        function endExperiment() {
+            stopMouseTracking();
+            participantData.endTime = performance.now();
+            logEvent('Experiment End');
+            showPage('page-end');
+            
+            // For the experimenter to get the data
+            console.log("--- 最终被试数据 ---");
+            console.log(JSON.stringify(participantData, null, 2));
+            document.getElementById('final-data-display').textContent = JSON.stringify(participantData, null, 2);
+            document.getElementById('final-data-display').parentElement.classList.remove('hidden');
+        }
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            // Set performance.now() as the relative zero point.
+            participantData.log.push({ event: 'Script Loaded', timestamp: performance.now(), page: 'N/A' });
+            showPage('page-demographics');
+        };
+
+    </script>
+</body>
+</html>

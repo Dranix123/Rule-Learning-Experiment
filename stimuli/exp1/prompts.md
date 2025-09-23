@@ -67,15 +67,15 @@
 
 **3.2**
 * **中文提示词:** 一张16:9的写实照片。在一个光线昏暗、空无一人的巴士站候车室里，一位**穿着一件深色夹克、发型利落的年轻中国男性**独自坐着。他眼眶泛红，眼神中流露出清晰而安静的悲伤，嘴唇微微抿着，面朝镜头。
-* **英文参考:** `A 16:9 realistic photo. In a dim, empty bus station waiting room, a young Chinese man in a dark jacket with a sharp haircut sits alone. His eyes are red-rimmed, showing clear, quiet sorrow, and his lips are slightly pursed as he faces the camera.`
+* **英文参考:** `A 16:9 realistic photo. In a dim, empty bus station waiting room, a young Chinese man in a dark jacket with a sharp haircut stands alone. His eyes are red-rimmed, showing clear, quiet sorrow, and his lips are slightly pursed as he faces the camera.`
 
 **3.3**
 * **中文提示词:** 一张16:9的写实照片。在一个光线昏暗、空无一人的巴士站候车室里，一位**头发染成深棕色、化着淡妆的年轻中国女性**独自坐着。她眼眶泛红，眼神中流露出清晰而安静的悲伤，嘴唇微微抿着，面朝镜头。
-* **英文参考:** `A 16:9 realistic photo. In a dim, empty bus station waiting room, a young Chinese woman with dark brown dyed hair and light makeup sits alone. Her eyes are red-rimmed, showing clear, quiet sorrow, and her lips are slightly pursed as she faces the camera.`
+* **英文参考:** `A 16:9 realistic photo. In a dim, empty bus station waiting room, a young Chinese woman with dark brown dyed hair and light makeup stands alone. Her eyes are red-rimmed, showing clear, quiet sorrow, and her lips are slightly pursed as she faces the camera.`
 
 **3.4**
 * **中文提示词:** 一张16:9的写实照片。在一个光线昏暗、空无一人的巴士站候车室里，一位**戴着耳机、神情疲惫的年轻中国男性**独自坐着。他眼眶泛红，眼神中流露出清晰而安静的悲伤，嘴唇微微抿着，面朝镜头。
-* **英文参考:** `A 16:9 realistic photo. In a dim, empty bus station waiting room, a weary-looking young Chinese man wearing headphones sits alone. His eyes are red-rimmed, showing clear, quiet sorrow, and his lips are slightly pursed as he faces the camera.`
+* **英文参考:** `A 16:9 realistic photo. In a dim, empty bus station waiting room, a weary-looking young Chinese man wearing headphones stands alone. His eyes are red-rimmed, showing clear, quiet sorrow, and his lips are slightly pursed as he faces the camera.`
 
 ---
 

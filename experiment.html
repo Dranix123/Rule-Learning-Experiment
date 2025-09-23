@@ -670,16 +670,87 @@
 
 
         // --- PAGE 10: END ---
+        function convertJsonToCsv(data) {
+            const escapeCsvCell = (cell) => {
+                if (cell === null || cell === undefined) {
+                    return '';
+                }
+                const str = String(cell);
+                // If the string contains a comma, a double quote, or a newline, enclose it in double quotes.
+                if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                    // Escape existing double quotes by doubling them
+                    return `"${str.replace(/"/g, '""')}"`;
+                }
+                return str;
+            };
+            
+            let csvContent = "";
+
+            // Section 1: Participant Info
+            csvContent += "# PARTICIPANT INFO\r\n";
+            const infoHeaders = ['id', 'age', 'gender', 'startTime', 'endTime', 'finalCoins_exp1'];
+            const infoValues = [data.id, data.age, data.gender, data.startTime, data.endTime, data.exp1.finalCoins];
+            csvContent += infoHeaders.join(',') + "\r\n";
+            csvContent += infoValues.map(escapeCsvCell).join(',') + "\r\n";
+
+            // Section 2: Experiment 1 Trials
+            if (data.exp1 && data.exp1.trials.length > 0) {
+                csvContent += "\r\n# EXPERIMENT 1 TRIALS\r\n";
+                const exp1Headers = Object.keys(data.exp1.trials[0]);
+                csvContent += exp1Headers.join(',') + "\r\n";
+                data.exp1.trials.forEach(row => {
+                    const rowValues = exp1Headers.map(header => row[header]);
+                    csvContent += rowValues.map(escapeCsvCell).join(',') + "\r\n";
+                });
+            }
+
+            // Section 3: Experiment 2 Ranking
+            if (data.exp2 && data.exp2.ranking.length > 0) {
+                csvContent += "\r\n# EXPERIMENT 2 RANKING\r\n";
+                const exp2Headers = Object.keys(data.exp2.ranking[0]);
+                csvContent += exp2Headers.join(',') + "\r\n";
+                data.exp2.ranking.forEach(row => {
+                    const rowValues = exp2Headers.map(header => row[header]);
+                    csvContent += rowValues.map(escapeCsvCell).join(',') + "\r\n";
+                });
+            }
+
+            // Section 4: Event Log
+            if (data.log && data.log.length > 0) {
+                csvContent += "\r\n# EVENT LOG\r\n";
+                const logHeaders = ['event', 'timestamp', 'page', 'details'];
+                csvContent += logHeaders.join(',') + "\r\n";
+                data.log.forEach(row => {
+                    const detailsStr = JSON.stringify(row.details);
+                    const rowValues = [row.event, row.timestamp, row.page, detailsStr];
+                    csvContent += rowValues.map(escapeCsvCell).join(',') + "\r\n";
+                });
+            }
+
+            // Section 5: Mouse Trajectory
+            if (data.mouseTrajectory && data.mouseTrajectory.length > 0) {
+                csvContent += "\r\n# MOUSE TRAJECTORY\r\n";
+                const mouseHeaders = Object.keys(data.mouseTrajectory[0]);
+                csvContent += mouseHeaders.join(',') + "\r\n";
+                data.mouseTrajectory.forEach(row => {
+                    const rowValues = mouseHeaders.map(header => row[header]);
+                    csvContent += rowValues.map(escapeCsvCell).join(',') + "\r\n";
+                });
+            }
+
+            return csvContent;
+        }
+
         function downloadData() {
             if (dataDownloaded) return; // Prevent multiple downloads
             dataDownloaded = true;
 
             const participantId = participantData.id || 'unknown_id';
             const timestamp = new Date().getTime();
-            const filename = `data_${participantId}_${timestamp}.json`;
+            const filename = `data_${participantId}_${timestamp}.csv`;
 
-            const dataStr = JSON.stringify(participantData, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json;charset=utf-8,' });
+            const dataStr = convertJsonToCsv(participantData);
+            const dataBlob = new Blob([dataStr], { type: 'text/csv;charset=utf-8,' });
 
             const downloadLink = document.createElement('a');
             downloadLink.href = URL.createObjectURL(dataBlob);
@@ -726,4 +797,5 @@
     </script>
 </body>
 </html>
+
 

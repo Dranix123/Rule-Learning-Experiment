@@ -74,9 +74,9 @@
         .drop-zone {
             display: flex;
             align-items: center;
-            min-height: 5rem; /* 确保空的放置区有足够的高度 */
-            padding: 0.75rem;
-            margin: 0.5rem 0;
+            min-height: 3rem; /* 确保空的放置区有足够的高度 (已减小) */
+            padding: 0.5rem; /* (已减小) */
+            margin: 0.25rem 0; /* (已减小) */
             background-color: #e5e7eb;
             border: 2px dashed #9ca3af;
             border-radius: 0.5rem;
@@ -209,15 +209,21 @@
 
     <!-- Page 5: Experiment 1 Formal -->
     <div id="page-exp1-formal" class="page hidden">
-        <div class="content-card">
+        <div class="content-card !max-w-6xl h-[93vh] flex flex-col">
             <div class="w-full flex justify-between items-center mb-6">
                 <p class="text-sm text-gray-500">摘要：接近可能获得或失去硬币，远离无变化。</p>
                 <p class="text-lg font-bold">当前硬币: <span id="coin-count">4</span></p>
             </div>
-            <div id="stimulus-container" class="w-full h-80 bg-gray-200 rounded-lg flex justify-center items-center text-gray-500 text-xl font-semibold">
-                <!-- 刺激将在这里显示 -->
+            <!-- Main interactive area -->
+            <div class="flex-1 w-full relative flex justify-center items-center">
+                <div id="stimulus-container" class="w-11/12 bg-gray-200 rounded-lg flex justify-center items-center text-gray-500 text-xl font-semibold" style="aspect-ratio: 16 / 9;">
+                    <!-- 刺激将在这里显示 -->
+                </div>
+                <div id="next-trial-container" class="absolute inset-0 flex justify-center items-center hidden">
+                    <button id="next-trial-btn" class="btn">下一轮</button>
+                </div>
             </div>
-            <div id="choice-buttons" class="mt-8">
+            <div id="choice-buttons" class="w-full flex justify-between pt-4 px-4">
                 <button id="approach-btn" class="btn">接近</button>
                 <button id="avoid-btn" class="btn btn-secondary">远离</button>
             </div>
@@ -276,7 +282,7 @@
 
     <!-- Page 9: Experiment 2 Formal -->
     <div id="page-exp2-formal" class="page hidden">
-        <div class="content-card !max-w-7xl">
+        <div class="content-card !max-w-6xl">
              <p class="text-md text-gray-600 mb-4">请将下列项目拖拽到右侧方框中，进行<strong>由多到少</strong>排序（1为消耗最多）。</p>
             <div class="flex flex-col md:flex-row gap-6">
                 <!-- Draggable items container -->
@@ -379,6 +385,8 @@
         const coinCountEl = document.getElementById('coin-count');
         const stimulusContainer = document.getElementById('stimulus-container');
         const choiceButtons = document.getElementById('choice-buttons');
+        const nextTrialContainer = document.getElementById('next-trial-container');
+        const nextTrialBtn = document.getElementById('next-trial-btn');
         let currentlyDragged = null;
         let dataDownloaded = false;
 
@@ -537,8 +545,8 @@
                 stimulusContainer.innerHTML = `<div class="p-4 text-2xl font-bold">${feedbackText}</div>`;
 
                 setTimeout(() => {
-                    exp1TrialIndex++;
-                    runExp1Trial();
+                    stimulusContainer.innerHTML = ''; // Clear feedback
+                    nextTrialContainer.classList.remove('hidden'); // Show the "Next Trial" button
                 }, 1000); // 1-second feedback duration
             };
             
@@ -693,6 +701,12 @@
             participantData.exp2.ranking = rankedItems;
             logEvent('Exp2 Ranking Confirmed', { ranking: rankedItems });
             endExperiment();
+        });
+
+        nextTrialBtn.addEventListener('click', () => {
+            nextTrialContainer.classList.add('hidden');
+            exp1TrialIndex++;
+            runExp1Trial();
         });
 
 
@@ -890,4 +904,7 @@
     </script>
 </body>
 </html>
+
+
+
 

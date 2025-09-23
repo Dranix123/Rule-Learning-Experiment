@@ -209,7 +209,7 @@
 
     <!-- Page 5: Experiment 1 Formal -->
     <div id="page-exp1-formal" class="page hidden">
-        <div class="content-card !max-w-6xl h-[93vh] flex flex-col">
+        <div class="content-card !max-w-6xl min-h-[93vh] flex flex-col">
             <div class="w-full flex justify-between items-center mb-6">
                 <p class="text-sm text-gray-500">摘要：接近可能获得或失去硬币，远离无变化。</p>
                 <p class="text-lg font-bold">当前硬币: <span id="coin-count">4</span></p>
@@ -350,14 +350,17 @@
         let lastMousePosition = { x: 0, y: 0 };
         let coins = 4;
         let exp1TrialIndex = 0;
+        let generatedExp1Trials = [];
+
 
         // --- EXPERIMENT 1 CONFIG ---
         const exp1Stimuli = {
-            'zaff1': { type: 'zaff', outcome: 1, text: "图片刺激: zaff1" },
-            'zaff2': { type: 'zaff', outcome: 1, text: "图片刺激: zaff2" },
-            'zaff3': { type: 'zaff', outcome: 1, text: "图片刺激: zaff3" },
-            'nonzaff4': { type: 'nonzaff', outcome: -2, text: "图片刺激: nonzaff4" }
+            'zaff1': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1/hh1.png', './stimuli/exp1/hh2.png', './stimuli/exp1/hh3.png', './stimuli/exp1/hh4.png'] },
+            'zaff2': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1/sh1.png', './stimuli/exp1/sh2.png', './stimuli/exp1/sh3.png', './stimuli/exp1/sh4.png'] },
+            'zaff3': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1/hs1.png', './stimuli/exp1/hs2.png', './stimuli/exp1/hs3.png', './stimuli/exp1/hs4.png'] },
+            'nonzaff4': { type: 'nonzaff', outcome: -2, images: ['./stimuli/exp1/ss1.png', './stimuli/exp1/ss2.png', './stimuli/exp1/ss3.png', './stimuli/exp1/ss4.png'] }
         };
+
         // A pre-generated trial order satisfying the Latin Square and no-repeat constraints.
         const exp1TrialOrder = [
             'zaff1', 'nonzaff4', 'zaff2', 'zaff3',
@@ -365,6 +368,29 @@
             'zaff2', 'zaff3', 'nonzaff4', 'zaff1',
             'zaff3', 'zaff2', 'zaff1', 'nonzaff4'
         ];
+
+        function generateTrialList() {
+            // Create shuffled copies of image lists to not modify the original config
+            const shuffledImages = {
+                zaff1: [...exp1Stimuli.zaff1.images].sort(() => Math.random() - 0.5),
+                zaff2: [...exp1Stimuli.zaff2.images].sort(() => Math.random() - 0.5),
+                zaff3: [...exp1Stimuli.zaff3.images].sort(() => Math.random() - 0.5),
+                nonzaff4: [...exp1Stimuli.nonzaff4.images].sort(() => Math.random() - 0.5)
+            };
+
+            generatedExp1Trials = exp1TrialOrder.map(stimulusId => {
+                const imagePath = shuffledImages[stimulusId].pop();
+                if (!imagePath) {
+                    console.error(`Ran out of images for stimulus type: ${stimulusId}`);
+                }
+                return {
+                    stimulusId: stimulusId,
+                    imagePath: imagePath
+                };
+            });
+            logEvent('Exp1 Trial List Generated', { count: generatedExp1Trials.length });
+        }
+
 
         // --- EXPERIMENT 2 CONFIG ---
         const exp2Items = [
@@ -421,7 +447,7 @@
                     y: lastMousePosition.y,
                     timestamp: performance.now()
                 });
-            }, 1000 / 10); // ~30Hz
+            }, 1000 / 30); // ~30Hz
         }
 
         function stopMouseTracking() {
@@ -492,21 +518,23 @@
 
         // --- PAGE 5: EXP 1 FORMAL ---
         function runExp1Trial() {
-            if (exp1TrialIndex >= exp1TrialOrder.length) {
+            if (exp1TrialIndex >= generatedExp1Trials.length) {
                 endExp1();
                 return;
             }
 
-            const stimulusId = exp1TrialOrder[exp1TrialIndex];
+            const currentTrial = generatedExp1Trials[exp1TrialIndex];
+            const stimulusId = currentTrial.stimulusId;
+            const imagePath = currentTrial.imagePath;
             const stimulus = exp1Stimuli[stimulusId];
             
-            stimulusContainer.textContent = stimulus.text;
-            stimulusContainer.innerHTML = `<div class="p-4">${stimulus.text}</div>`; // Placeholder for actual image
+            stimulusContainer.innerHTML = `<img src="${imagePath}" class="w-full h-full object-contain" alt="stimulus image">`;
             choiceButtons.classList.remove('hidden');
 
             const trialData = {
                 trial_index: exp1TrialIndex + 1,
                 stimulus: stimulusId,
+                imagePath: imagePath,
                 start_time: performance.now(),
                 choice: null,
                 rt: null,
@@ -515,7 +543,7 @@
                 coins_after: null
             };
 
-            logEvent('Stimulus Presented', { trial: trialData.trial_index, stimulus: stimulusId });
+            logEvent('Stimulus Presented', { trial: trialData.trial_index, stimulus: stimulusId, image: imagePath });
 
             const handleChoice = (choice) => {
                 // Remove listeners to prevent multiple clicks
@@ -897,6 +925,7 @@
         window.onload = () => {
             // Set performance.now() as the relative zero point.
             participantData.log.push({ event: 'Script Loaded', timestamp: performance.now(), page: 'N/A' });
+            generateTrialList(); // Generate the randomized trial list with images
             showPage('page-demographics');
             setupDebugMode(); // Initialize debug mode
         };
@@ -904,7 +933,4 @@
     </script>
 </body>
 </html>
-
-
-
 

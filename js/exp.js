@@ -42,16 +42,18 @@ const exp1TrialOrder = [
 ];
 
 function generateTrialList() {
-    // Create shuffled copies of image lists to not modify the original config
-    const shuffledImages = {
-        zaff1: [...exp1Stimuli.zaff1.images].sort(() => Math.random() - 0.5),
-        zaff2: [...exp1Stimuli.zaff2.images].sort(() => Math.random() - 0.5),
-        zaff3: [...exp1Stimuli.zaff3.images].sort(() => Math.random() - 0.5),
-        nonzaff4: [...exp1Stimuli.nonzaff4.images].sort(() => Math.random() - 0.5)
+    // Create copies of image lists to not modify the original config.
+    // The shuffle logic (.sort) has been removed.
+    const sequentialImages = {
+        zaff1: [...exp1Stimuli.zaff1.images],
+        zaff2: [...exp1Stimuli.zaff2.images],
+        zaff3: [...exp1Stimuli.zaff3.images],
+        nonzaff4: [...exp1Stimuli.nonzaff4.images]
     };
 
     generatedExp1Trials = exp1TrialOrder.map(stimulusId => {
-        const imagePath = shuffledImages[stimulusId].pop();
+        // Use shift() to get the first available image in its original order.
+        const imagePath = sequentialImages[stimulusId].shift();
         if (!imagePath) {
             console.error(`Ran out of images for stimulus type: ${stimulusId}`);
         }
@@ -66,16 +68,16 @@ function generateTrialList() {
 
 // --- EXPERIMENT 2 CONFIG ---
 const exp2Items = [
-    { id: 'item-Levitate', text: '让目标情绪产生的速度变慢，比如原本考试满分立刻感到狂喜，现在得知此消息后在十分钟内慢慢由微弱的开心到大笑再到狂喜（情境完全一样）' },
-    { id: 'item-Transform', text: '在一个强烈的情境下，将个体应有的情绪转为相近而不同的其他情绪，例如由惊恐转为厌恶' },
-    { id: 'item-Cease', text: '在目标正体验一种强烈情绪（如热恋）时，瞬间将其完全清除，使其内心归于绝对的平静。' },
-    { id: 'item-Big', text: '将目标已有的某种情绪，在性质不变的情况下，等比例增强其强度（例如，将微小的烦躁增强为愤怒）。' },
-    { id: 'item-Conjure', text: '在一个完全中性、无任何刺激的情境下，让目标体验到一种强烈的、无缘由的复杂情绪（如乡愁）。' },
-    { id: 'item-Split', text: '让目标针对同一件事，在同一瞬间体验到两种同样强烈或都较弱的同效价维度情绪（例如，对毕业既感到悲伤又感到愤怒）' },
-    { id: 'item-Stone', text: '在1小时内定格对象的情绪，无论之后情境怎么变，对象的情绪都不会变' },
-    { id: 'item-Color', text: '在目标现有情绪的基调上，增添一抹细微的“色彩”（例如，在“开心”的情绪上，增添一丝“得意”的感觉）。' },
-    { id: 'item-Invisible', text: '强行将目标一种正在体验的情绪转入潜意识，使其意识层面感觉不到，但情绪本身仍对行为产生潜在影响。' },
-    { id: 'item-Teleport', text: '让目标的情绪产生的时间间断性延后，比如原本考试满分立刻感到狂喜，现在得知此消息后十分钟后才狂喜（情境完全一致）' }
+    { id: 'item-Levitate', text: '悬浮：使情绪的攀升过程变缓慢，如狂喜感在数分钟内才达到顶峰。' },
+    { id: 'item-Transform', text: '转化：将目标的一种情绪，转化为另一种性质相近的情绪，例如将“惊恐”转为“厌恶”。' },
+    { id: 'item-Cease', text: '终止：瞬间中止并清除目标的强烈情绪，使其内心归于虚无。' },
+    { id: 'item-Big', text: '放大：将目标的现有情绪放大，例如将“微恼”放大为“暴怒”。' },
+    { id: 'item-Conjure', text: '召唤：中性情境下，为目标凭空召唤出强烈而复杂的情绪，如乡愁。' },
+    { id: 'item-Split', text: '分裂：使目标对同一事物瞬间产生两种旗鼓相当的情绪，例如对毕业同时感到“悲伤”与“恐惧”。' },
+    { id: 'item-Stone', text: '石化：将目标当前情绪固化，使其在一段时间内完全不随外界变化。' },
+    { id: 'item-Color', text: '渲染：为目标当前的主要情绪，渲染上一抹细微的额外色彩，如在“开心”中染上“得意”。' },
+    { id: 'item-Invisible', text: '潜藏：将目标的情绪压入潜意识，使其无法察觉，仍暗中影响行为。' },
+    { id: 'item-Teleport', text: '传送：将情绪的触发时刻延后，仿佛将其传送到了未来，例如，十分钟后才感受到本应立即产生的狂喜。' }
 ];
 
 // --- DOM ELEMENTS ---
@@ -233,7 +235,7 @@ function runExp1Trial() {
         if (choice === 'approach') {
             outcome = stimulus.outcome;
             coins += outcome;
-            feedbackText = outcome > 0 ? `对方给了你 ${outcome} 个硬币` : `对方拿走了你 ${-outcome} 个硬币`;
+            feedbackText = outcome > 0 ? `你获得了 ${outcome} 个硬币` : `你失去了 ${-outcome} 个硬币`;
         } else { // 'avoid'
             feedbackText = '你的硬币没有变化';
         }
@@ -318,7 +320,7 @@ function setupExp2() {
         const zone = document.createElement('div');
         zone.className = 'drop-zone';
         zone.dataset.rank = i;
-        zone.innerHTML = `<span class="font-bold text-lg mr-4 text-gray-500 w-8">${i}.</span>`;
+        zone.innerHTML = `<span class="font-bold text-base mr-4 text-gray-500 w-8">${i}.</span>`;
         dropZoneContainer.appendChild(zone);
     }
 
@@ -599,7 +601,8 @@ function setupDebugMode() {
 window.onload = () => {
     // Set performance.now() as the relative zero point.
     participantData.log.push({ event: 'Script Loaded', timestamp: performance.now(), page: 'N/A' });
-    generateTrialList(); // Generate the randomized trial list with images
+    generateTrialList(); // Generate the trial list with images
     showPage('page-demographics');
     setupDebugMode(); // Initialize debug mode
 };
+

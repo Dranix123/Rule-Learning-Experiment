@@ -1,0 +1,3 @@
+打开experiment.html即可运行
+example_data.csv是作者本人的测试结果
+可以在trial_plots_absolute_scale文件夹中看到作者在实验一中每个式次的鼠标轨迹

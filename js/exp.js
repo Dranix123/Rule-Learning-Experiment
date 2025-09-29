@@ -5,6 +5,7 @@ const participantData = {
     age: null,
     gender: null,
     handedness: null,
+    condition: null, // New field for condition
     startTime: null,
     endTime: null,
     log: [],
@@ -25,12 +26,100 @@ let exp1TrialIndex = 0;
 let generatedExp1Trials = [];
 
 
-// --- EXPERIMENT 1 CONFIG ---
-const exp1Stimuli = {
-    'zaff1': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1/hh1.png', './stimuli/exp1/hh2.png', './stimuli/exp1/hh3.png', './stimuli/exp1/hh4.png'] },
-    'zaff2': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1/sh1.png', './stimuli/exp1/sh2.png', './stimuli/exp1/sh3.png', './stimuli/exp1/sh4.png'] },
-    'zaff3': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1/hs1.png', './stimuli/exp1/hs2.png', './stimuli/exp1/hs3.png', './stimuli/exp1/hs4.png'] },
-    'nonzaff4': { type: 'nonzaff', outcome: -2, images: ['./stimuli/exp1/ss1.png', './stimuli/exp1/ss2.png', './stimuli/exp1/ss3.png', './stimuli/exp1/ss4.png'] }
+// --- CONDITION CONFIGURATION ---
+const conditionConfig = {
+    //情境条件
+    contextual: {
+        exp1: {
+            instructions: [
+                `<p>接下来你将看到处在不同场景下的一些人，你需要选择<strong>接近</strong>或是<strong>远离</strong>他们。</p>`,
+                `<p>你初始有<strong>4枚</strong>硬币。</p>`,
+                `<p>特定条件组合下，如果你选择<strong>接近</strong>，你可能得到一枚硬币或失去两枚硬币（有一定规律而非随机）。</p>`,
+                `<p>如果你选择<strong>远离</strong>，则你的硬币数量没有任何变化。</p>`,
+                `<p>你的目标是在结束时获得<strong>尽可能多</strong>的硬币。</p>`
+            ],
+            check_q1: "1. 你初始有多少硬币？",
+            check_q2: "2. 如果你选择“远离”，你的硬币会发生什么变化？",
+            check_q3: "3. 你的目标是什么？",
+            summary: "摘要：接近可能获得或失去硬币，远离无变化。目标：获得尽可能多的硬币",
+            approach_btn_text: "接近",
+            avoid_btn_text: "远离",
+            stimuli: {
+                'zaff1': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1_emo/hh1.png', './stimuli/exp1_emo/hh2.png', './stimuli/exp1_emo/hh3.png', './stimuli/exp1_emo/hh4.png'] },
+                'zaff2': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1_emo/sh1.png', './stimuli/exp1_emo/sh2.png', './stimuli/exp1_emo/sh3.png', './stimuli/exp1_emo/sh4.png'] },
+                'zaff3': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1_emo/hs1.png', './stimuli/exp1_emo/hs2.png', './stimuli/exp1_emo/hs3.png', './stimuli/exp1_emo/hs4.png'] },
+                'nonzaff4': { type: 'nonzaff', outcome: -2, images: ['./stimuli/exp1_emo/ss1.png', './stimuli/exp1_emo/ss2.png', './stimuli/exp1_emo/ss3.png', './stimuli/exp1_emo/ss4.png'] }
+            }
+        },
+        exp2: {
+            instructions: [
+                `<p>假设在一个世界中，有个魔法师能用心灵魔力在一定程度上操纵他人的心灵，但不同的操纵方式消耗的心灵魔力不同。</p>`,
+                `<p>接下来，你将看到十种操纵心灵的方式。</p>`,
+                `<p>请你根据你的直觉判断，对它们可能<strong>消耗心灵魔力的多少</strong>进行<strong>由多到少</strong>的排序。</p>`
+            ],
+            check_q1: "1. 在这个任务中，你需要做什么？",
+            check_q2: "2. 排序的顺序是什么？",
+            ranking_instruction: "请将下列项目拖拽到右侧方框中，进行<strong>由多到少</strong>排序（1为消耗最多）。",
+            items: [
+                { id: 'item-Levitate', text: '悬浮：使情绪的攀升过程变缓慢，如狂喜感在数分钟内才达到顶峰。' },
+                { id: 'item-Transform', text: '转化：将目标的一种情绪，转化为另一种性质相近的情绪，例如将“惊恐”转为“厌恶”。' },
+                { id: 'item-Cease', text: '终止：瞬间中止并清除目标的强烈情绪，使其内心归于虚无。' },
+                { id: 'item-Big', text: '放大：将目标的现有情绪放大，例如将“微恼”放大为“暴怒”。' },
+                { id: 'item-Conjure', text: '召唤：中性情境下，为目标凭空召唤出强烈而复杂的情绪，如乡愁。' },
+                { id: 'item-Split', text: '分裂：使目标对同一事物瞬间产生两种旗鼓相当的情绪，例如对毕业同时感到“悲伤”与“恐惧”。' },
+                { id: 'item-Stone', text: '石化：将目标当前情绪固化，使其在一段时间内完全不随外界变化。' },
+                { id: 'item-Color', text: '渲染：为目标当前的主要情绪，渲染上一抹细微的额外色彩，如在“开心”中染上“得意”。' },
+                { id: 'item-Invisible', text: '潜藏：将目标的情绪压入潜意识，使其无法察觉，仍暗中影响行为。' },
+                { id: 'item-Teleport', text: '传送：将情绪的触发时刻延后，仿佛将其传送到了未来，例如，十分钟后才感受到本应立即产生的狂喜。' }
+            ]
+        }
+    },
+    //物理条件
+    physical: {
+        exp1: {
+            instructions: [
+                `<p>接下来你将看到一些神秘的能量球体，你需要选择<strong>触摸</strong>或是<strong>避开</strong>它们。</p>`,
+                `<p>你初始有<strong>4枚</strong>硬币。</p>`,
+                `<p>在特定条件下，如果你选择<strong>触摸</strong>，你可能得到一枚硬币或失去两枚硬币（有一定规律而非随机）。</p>`,
+                `<p>如果你选择<strong>避开</strong>，则你的硬币数量没有任何变化。</p>`,
+                `<p>你的目标是在结束时获得<strong>尽可能多</strong>的硬币。</p>`
+            ],
+            check_q1: "1. 你初始有多少硬币？",
+            check_q2: "2. 如果你选择“避开”，你的硬币会发生什么变化？",
+            check_q3: "3. 你的目标是什么？",
+            summary: "摘要：触摸可能获得或失去硬币，避开无变化。目标：获得尽可能多的硬币",
+            approach_btn_text: "触摸",
+            avoid_btn_text: "避开",
+            stimuli: { 
+                'zaff1': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1_phy/hh1.png', './stimuli/exp1_phy/hh2.png', './stimuli/exp1_phy/hh3.png', './stimuli/exp1_phy/hh4.png'] },
+                'zaff2': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1_phy/sh1.png', './stimuli/exp1_phy/sh2.png', './stimuli/exp1_phy/sh3.png', './stimuli/exp1_phy/sh4.png'] },
+                'zaff3': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1_phy/hs1.png', './stimuli/exp1_phy/hs2.png', './stimuli/exp1_phy/hs3.png', './stimuli/exp1_phy/hs4.png'] },
+                'nonzaff4': { type: 'nonzaff', outcome: -2, images: ['./stimuli/exp1_phy/ss1.png', './stimuli/exp1_phy/ss2.png', './stimuli/exp1_phy/ss3.png', './stimuli/exp1_phy/ss4.png'] }
+            }
+        },
+        exp2: {
+            instructions: [
+                `<p>假设在一个世界中，有个魔法师能用精神力量在一定程度上操纵物质，但不同的操纵方式消耗的精神力量不同。</p>`,
+                `<p>接下来，你将看到十种操纵物质的方式。</p>`,
+                `<p>请你根据你的直觉判断，对它们可能<strong>消耗精神力量的多少</strong>进行<strong>由多到少</strong>的排序。</p>`
+            ],
+            check_q1: "1. 在这个任务中，你需要做什么？",
+            check_q2: "2. 排序的顺序是什么？",
+            ranking_instruction: "请将下列项目拖拽到右侧方框中，进行<strong>由多到少</strong>排序（1为消耗最多）。",
+            items: [
+                { id: 'item-Levitate', text: '悬浮' },
+                { id: 'item-Transform', text: '转化' },
+                { id: 'item-Cease', text: '消失' },
+                { id: 'item-Big', text: '放大' },
+                { id: 'item-Conjure', text: '召唤' },
+                { id: 'item-Split', text: '分裂' },
+                { id: 'item-Stone', text: '石化' },
+                { id: 'item-Color', text: '渲染' },
+                { id: 'item-Invisible', text: '潜藏' },
+                { id: 'item-Teleport', text: '传送' }
+            ]
+        }
+    }
 };
 
 // A pre-generated trial order satisfying the Latin Square and no-repeat constraints.
@@ -42,8 +131,9 @@ const exp1TrialOrder = [
 ];
 
 function generateTrialList() {
-    // Create copies of image lists to not modify the original config.
-    // The shuffle logic (.sort) has been removed.
+    const condition = participantData.condition;
+    const exp1Stimuli = conditionConfig[condition].exp1.stimuli;
+
     const sequentialImages = {
         zaff1: [...exp1Stimuli.zaff1.images],
         zaff2: [...exp1Stimuli.zaff2.images],
@@ -52,7 +142,6 @@ function generateTrialList() {
     };
 
     generatedExp1Trials = exp1TrialOrder.map(stimulusId => {
-        // Use shift() to get the first available image in its original order.
         const imagePath = sequentialImages[stimulusId].shift();
         if (!imagePath) {
             console.error(`Ran out of images for stimulus type: ${stimulusId}`);
@@ -62,23 +151,8 @@ function generateTrialList() {
             imagePath: imagePath
         };
     });
-    logEvent('Exp1 Trial List Generated', { count: generatedExp1Trials.length });
+    logEvent('Exp1 Trial List Generated', { count: generatedExp1Trials.length, condition: condition });
 }
-
-
-// --- EXPERIMENT 2 CONFIG ---
-const exp2Items = [
-    { id: 'item-Levitate', text: '悬浮：使情绪的攀升过程变缓慢，如狂喜感在数分钟内才达到顶峰。' },
-    { id: 'item-Transform', text: '转化：将目标的一种情绪，转化为另一种性质相近的情绪，例如将“惊恐”转为“厌恶”。' },
-    { id: 'item-Cease', text: '终止：瞬间中止并清除目标的强烈情绪，使其内心归于虚无。' },
-    { id: 'item-Big', text: '放大：将目标的现有情绪放大，例如将“微恼”放大为“暴怒”。' },
-    { id: 'item-Conjure', text: '召唤：中性情境下，为目标凭空召唤出强烈而复杂的情绪，如乡愁。' },
-    { id: 'item-Split', text: '分裂：使目标对同一事物瞬间产生两种旗鼓相当的情绪，例如对毕业同时感到“悲伤”与“恐惧”。' },
-    { id: 'item-Stone', text: '石化：将目标当前情绪固化，使其在一段时间内完全不随外界变化。' },
-    { id: 'item-Color', text: '渲染：为目标当前的主要情绪，渲染上一抹细微的额外色彩，如在“开心”中染上“得意”。' },
-    { id: 'item-Invisible', text: '潜藏：将目标的情绪压入潜意识，使其无法察觉，仍暗中影响行为。' },
-    { id: 'item-Teleport', text: '传送：将情绪的触发时刻延后，仿佛将其传送到了未来，例如，十分钟后才感受到本应立即产生的狂喜。' }
-];
 
 // --- DOM ELEMENTS ---
 const pages = document.querySelectorAll('.page');
@@ -148,7 +222,14 @@ document.getElementById('start-btn').addEventListener('click', () => {
     participantData.handedness = handedness;
     participantData.startTime = performance.now();
 
+    // --- CONDITION ASSIGNMENT ---
+    const conditions = ['physical', 'contextual'];
+    participantData.condition = conditions[Math.floor(Math.random() * conditions.length)];
+    logEvent('Condition Assigned', { condition: participantData.condition });
+    // --- END CONDITION ASSIGNMENT ---
+
     logEvent('Experiment Start');
+    generateTrialList(); // Generate trials after condition is set
     startMouseTracking();
     showPage('page-consent');
 });
@@ -162,11 +243,20 @@ consentCheckbox.addEventListener('change', () => {
 consentBtn.addEventListener('click', () => {
     if (consentCheckbox.checked) {
         showPage('page-exp1-instructions');
+        // Load conditional content for Exp1 Instructions
+        const condition = participantData.condition;
+        const instructions = conditionConfig[condition].exp1.instructions;
+        document.getElementById('exp1-instructions-content').innerHTML = instructions.join('');
     }
 });
 
 // --- PAGE 3: EXP 1 INSTRUCTIONS ---
 document.getElementById('exp1-instr-btn').addEventListener('click', () => {
+    // Load conditional content for Exp1 Check
+    const condition = participantData.condition;
+    document.getElementById('exp1-q1-text').textContent = conditionConfig[condition].exp1.check_q1;
+    document.getElementById('exp1-q2-text').textContent = conditionConfig[condition].exp1.check_q2;
+    document.getElementById('exp1-q3-text').textContent = conditionConfig[condition].exp1.check_q3;
     showPage('page-exp1-check');
 });
 
@@ -180,6 +270,13 @@ document.getElementById('exp1-check-btn').addEventListener('click', () => {
     if (q1 === '4' && q2 === 'no_change' && q3 === 'max_coins') {
         errorEl.classList.add('hidden');
         logEvent('Exp1 Comprehension Check Passed');
+        
+        // Load conditional content for Exp1 Formal
+        const condition = participantData.condition;
+        document.getElementById('exp1-summary').textContent = conditionConfig[condition].exp1.summary;
+        document.getElementById('approach-btn').textContent = conditionConfig[condition].exp1.approach_btn_text;
+        document.getElementById('avoid-btn').textContent = conditionConfig[condition].exp1.avoid_btn_text;
+
         showPage('page-exp1-formal');
         runExp1Trial();
     } else {
@@ -187,6 +284,10 @@ document.getElementById('exp1-check-btn').addEventListener('click', () => {
         logEvent('Exp1 Comprehension Check Failed');
         setTimeout(() => {
             errorEl.classList.add('hidden');
+            // Also need to reload instructions when sending them back
+            const condition = participantData.condition;
+            const instructions = conditionConfig[condition].exp1.instructions;
+            document.getElementById('exp1-instructions-content').innerHTML = instructions.join('');
             showPage('page-exp1-instructions');
         }, 2000);
     }
@@ -202,6 +303,7 @@ function runExp1Trial() {
     const currentTrial = generatedExp1Trials[exp1TrialIndex];
     const stimulusId = currentTrial.stimulusId;
     const imagePath = currentTrial.imagePath;
+    const exp1Stimuli = conditionConfig[participantData.condition].exp1.stimuli;
     const stimulus = exp1Stimuli[stimulusId];
 
     stimulusContainer.innerHTML = `<img src="${imagePath}" class="w-full h-full object-contain" alt="stimulus image">`;
@@ -270,11 +372,19 @@ function endExp1() {
 
 // --- PAGE 6: EXP 1 BREAK ---
 document.getElementById('to-exp2-btn').addEventListener('click', () => {
+    // Load conditional content for Exp2 Instructions
+    const condition = participantData.condition;
+    const instructions = conditionConfig[condition].exp2.instructions;
+    document.getElementById('exp2-instructions-content').innerHTML = instructions.join('');
     showPage('page-exp2-instructions');
 });
 
 // --- PAGE 7: EXP 2 INSTRUCTIONS ---
 document.getElementById('exp2-instr-btn').addEventListener('click', () => {
+    // Load conditional content for Exp2 Check
+    const condition = participantData.condition;
+    document.getElementById('exp2-q1-text').textContent = conditionConfig[condition].exp2.check_q1;
+    document.getElementById('exp2-q2-text').textContent = conditionConfig[condition].exp2.check_q2;
     showPage('page-exp2-check');
 });
 
@@ -294,6 +404,9 @@ document.getElementById('exp2-check-btn').addEventListener('click', () => {
         logEvent('Exp2 Comprehension Check Failed');
         setTimeout(() => {
             errorEl.classList.add('hidden');
+            const condition = participantData.condition;
+            const instructions = conditionConfig[condition].exp2.instructions;
+            document.getElementById('exp2-instructions-content').innerHTML = instructions.join('');
             showPage('page-exp2-instructions');
         }, 2000);
     }
@@ -301,8 +414,17 @@ document.getElementById('exp2-check-btn').addEventListener('click', () => {
 
 // --- PAGE 9: EXP 2 FORMAL ---
 function setupExp2() {
+    const condition = participantData.condition;
+    const exp2Items = conditionConfig[condition].exp2.items;
     const draggableContainer = document.getElementById('draggable-container');
     const dropZoneContainer = document.getElementById('drop-zone-container');
+
+    // Clear any previous items
+    draggableContainer.innerHTML = '';
+    dropZoneContainer.innerHTML = '';
+
+    // Load conditional instruction
+    document.getElementById('exp2-ranking-instruction').innerHTML = conditionConfig[condition].exp2.ranking_instruction;
 
     // Shuffle items before displaying
     const shuffledItems = [...exp2Items].sort(() => Math.random() - 0.5);
@@ -433,8 +555,8 @@ function convertJsonToCsv(data) {
 
     // Section 1: Participant Info
     csvContent += "# PARTICIPANT INFO\r\n";
-    const infoHeaders = ['id', 'age', 'gender', "handedness", 'startTime', 'endTime', 'finalCoins_exp1'];
-    const infoValues = [data.id, data.age, data.gender, data.handedness, data.startTime, data.endTime, data.exp1.finalCoins];
+    const infoHeaders = ['id', 'age', 'gender', "handedness", 'condition', 'startTime', 'endTime', 'finalCoins_exp1'];
+    const infoValues = [data.id, data.age, data.gender, data.handedness, data.condition, data.startTime, data.endTime, data.exp1.finalCoins];
     csvContent += infoHeaders.join(',') + "\r\n";
     csvContent += infoValues.map(escapeCsvCell).join(',') + "\r\n";
 
@@ -559,25 +681,51 @@ function setupDebugMode() {
                 participantData.age = 99;
                 participantData.gender = 'other';
                 participantData.startTime = performance.now();
+                // Assign a default condition for debugging
+                const conditions = ['physical', 'contextual'];
+                participantData.condition = conditions[Math.floor(Math.random() * conditions.length)];
+                logEvent('Condition Assigned (Debug)', { condition: participantData.condition });
+
+                generateTrialList();
                 logEvent('Experiment Start (Debug)');
                 startMouseTracking();
             }
-
-            // Handle pages that require specific setup functions
+            
+            // Trigger the same content-loading logic as the real flow
+            if (page.id === 'page-exp1-instructions') {
+                const condition = participantData.condition;
+                const instructions = conditionConfig[condition].exp1.instructions;
+                document.getElementById('exp1-instructions-content').innerHTML = instructions.join('');
+            }
+            if (page.id === 'page-exp1-check') {
+                const condition = participantData.condition;
+                document.getElementById('exp1-q1-text').textContent = conditionConfig[condition].exp1.check_q1;
+                document.getElementById('exp1-q2-text').textContent = conditionConfig[condition].exp1.check_q2;
+                document.getElementById('exp1-q3-text').textContent = conditionConfig[condition].exp1.check_q3;
+            }
             if (pageId === 'page-exp1-formal') {
-                showPage(pageId);
+                 const condition = participantData.condition;
+                document.getElementById('exp1-summary').textContent = conditionConfig[condition].exp1.summary;
+                document.getElementById('approach-btn').textContent = conditionConfig[condition].exp1.approach_btn_text;
+                document.getElementById('avoid-btn').textContent = conditionConfig[condition].exp1.avoid_btn_text;
                 runExp1Trial();
-            } else if (pageId === 'page-exp2-formal') {
-                // Only setup if it hasn't been done yet
+            }
+             if (page.id === 'page-exp2-instructions') {
+                const condition = participantData.condition;
+                const instructions = conditionConfig[condition].exp2.instructions;
+                document.getElementById('exp2-instructions-content').innerHTML = instructions.join('');
+            }
+             if (page.id === 'page-exp2-check') {
+                const condition = participantData.condition;
+                document.getElementById('exp2-q1-text').textContent = conditionConfig[condition].exp2.check_q1;
+                document.getElementById('exp2-q2-text').textContent = conditionConfig[condition].exp2.check_q2;
+            }
+            if (pageId === 'page-exp2-formal') {
                 if (document.getElementById('draggable-container').children.length === 0) {
                     setupExp2();
                 }
-                showPage(pageId);
-            } else {
-                showPage(pageId);
             }
-
-            // Hide menu after selection
+            showPage(pageId);
             debugMenu.classList.add('hidden');
         });
         debugPageList.appendChild(button);
@@ -585,13 +733,12 @@ function setupDebugMode() {
 
     // Add key listener to toggle the debug menu visibility
     window.addEventListener('keydown', (e) => {
-        // Do not trigger if the user is typing in an input field
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') {
             return;
         }
 
         if (e.key === 'm') {
-            e.preventDefault(); // Prevent typing 'm' character
+            e.preventDefault(); 
             debugMenu.classList.toggle('hidden');
         }
     });
@@ -599,10 +746,7 @@ function setupDebugMode() {
 
 // --- INITIALIZATION ---
 window.onload = () => {
-    // Set performance.now() as the relative zero point.
     participantData.log.push({ event: 'Script Loaded', timestamp: performance.now(), page: 'N/A' });
-    generateTrialList(); // Generate the trial list with images
     showPage('page-demographics');
-    setupDebugMode(); // Initialize debug mode
+    setupDebugMode();
 };
-

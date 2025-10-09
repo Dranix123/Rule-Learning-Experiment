@@ -33,7 +33,7 @@
                 </div>
                 <div>
                     <label for="handedness" class="block text-sm font-medium text-gray-700">利手:</label>
-                    <select id="handedness" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    <select id="handedness" class="mt-1 block w-full px-3 py-2 bg-white border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="">请选择</option>
                         <option value="left">左手</option>
                         <option value="right">右手</option>
@@ -126,9 +126,17 @@
         </div>
     </div>
 
+    <div id="page-exp1-mid-break" class="page hidden">
+        <div class="content-card">
+            <h1 class="text-2xl font-bold mb-6">第一部分已完成</h1>
+            <p class="text-gray-600 mb-8">休息一下，准备好后请点击按钮继续下一部分。</p>
+            <button id="to-next-block-btn" class="btn">继续</button>
+        </div>
+    </div>
+
     <div id="page-exp1-break" class="page hidden">
         <div class="content-card">
-            <h1 class="text-2xl font-bold mb-6">第一部分结束</h1>
+            <h1 class="text-2xl font-bold mb-6">实验一结束</h1>
             <p class="text-lg mb-4">你最终获得了 <span id="final-coin-count" class="font-bold"></span> 个硬币。</p>
             <p class="text-gray-600 mb-8">休息一下，准备好后请点击按钮继续。</p>
             <button id="to-exp2-btn" class="btn">继续实验二</button>

@@ -5,7 +5,9 @@ const participantData = {
     age: null,
     gender: null,
     handedness: null,
-    condition: null, // New field for condition
+    condition: null, // contextual vs physical
+    block_order: null, // e.g., ['block1', 'block2'] or ['block2', 'block1']
+    nonzaff_condition: null, // 1, 2, 3, or 4
     startTime: null,
     endTime: null,
     log: [],
@@ -23,6 +25,7 @@ let mouseTrackerInterval;
 let lastMousePosition = { x: 0, y: 0 };
 let coins = 4;
 let exp1TrialIndex = 0;
+const TOTAL_TRIALS_PER_BLOCK = 16;
 let generatedExp1Trials = [];
 
 
@@ -45,10 +48,18 @@ const conditionConfig = {
             approach_btn_text: "接近",
             avoid_btn_text: "远离",
             stimuli: {
-                'zaff1': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1_emo/hh1.png', './stimuli/exp1_emo/hh2.png', './stimuli/exp1_emo/hh3.png', './stimuli/exp1_emo/hh4.png'] },
-                'zaff2': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1_emo/sh1.png', './stimuli/exp1_emo/sh2.png', './stimuli/exp1_emo/sh3.png', './stimuli/exp1_emo/sh4.png'] },
-                'zaff3': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1_emo/hs1.png', './stimuli/exp1_emo/hs2.png', './stimuli/exp1_emo/hs3.png', './stimuli/exp1_emo/hs4.png'] },
-                'nonzaff4': { type: 'nonzaff', outcome: -2, images: ['./stimuli/exp1_emo/ss1.png', './stimuli/exp1_emo/ss2.png', './stimuli/exp1_emo/ss3.png', './stimuli/exp1_emo/ss4.png'] }
+                block1: {
+                    'hh': { images: ['./stimuli/exp1_emo/hh1.png', './stimuli/exp1_emo/hh2.png', './stimuli/exp1_emo/hh3.png', './stimuli/exp1_emo/hh4.png'] },
+                    'sh': { images: ['./stimuli/exp1_emo/sh1.png', './stimuli/exp1_emo/sh2.png', './stimuli/exp1_emo/sh3.png', './stimuli/exp1_emo/sh4.png'] },
+                    'hs': { images: ['./stimuli/exp1_emo/hs1.png', './stimuli/exp1_emo/hs2.png', './stimuli/exp1_emo/hs3.png', './stimuli/exp1_emo/hs4.png'] },
+                    'ss': { images: ['./stimuli/exp1_emo/ss1.png', './stimuli/exp1_emo/ss2.png', './stimuli/exp1_emo/ss3.png', './stimuli/exp1_emo/ss4.png'] }
+                },
+                block2: { // Note: using 'ff', 'fs', 'sf', 'ss' as identifiers for block2 stimuli
+                    'ff': { images: ['./stimuli/exp1_emo/ff5.png', './stimuli/exp1_emo/ff6.png', './stimuli/exp1_emo/ff7.png', './stimuli/exp1_emo/ff8.png'] },
+                    'fs': { images: ['./stimuli/exp1_emo/fs5.png', './stimuli/exp1_emo/fs6.png', './stimuli/exp1_emo/fs7.png', './stimuli/exp1_emo/fs8.png'] },
+                    'sf': { images: ['./stimuli/exp1_emo/sf5.png', './stimuli/exp1_emo/sf6.png', './stimuli/exp1_emo/sf7.png', './stimuli/exp1_emo/sf8.png'] },
+                    'ss_block2': { images: ['./stimuli/exp1_emo/ss5.png', './stimuli/exp1_emo/ss6.png', './stimuli/exp1_emo/ss7.png', './stimuli/exp1_emo/ss8.png'] }
+                }
             }
         },
         exp2: {
@@ -69,7 +80,7 @@ const conditionConfig = {
                 { id: 'item-Split', text: '分裂：使目标对同一事物瞬间产生两种旗鼓相当的情绪，例如对毕业同时感到“悲伤”与“恐惧”。' },
                 { id: 'item-Stone', text: '石化：将目标当前情绪固化，使其在一段时间内完全不随外界变化。' },
                 { id: 'item-Color', text: '渲染：为目标当前的主要情绪，渲染上一抹细微的额外色彩，如在“开心”中染上“得意”。' },
-                { id: 'item-Invisible', text: '潜藏：将目标的情绪压入潜意识，使其无法察觉，仍暗中影响行为。' },
+                { id: 'item-Invisible', text: '隐形：将目标的情绪压入潜意识，使其无法察觉，仍暗中影响行为。' },
                 { id: 'item-Teleport', text: '传送：将情绪的触发时刻延后，仿佛将其传送到了未来，例如，十分钟后才感受到本应立即产生的狂喜。' }
             ]
         }
@@ -78,28 +89,36 @@ const conditionConfig = {
     physical: {
         exp1: {
             instructions: [
-                `<p>接下来你将看到一些神秘的能量球体，你需要选择<strong>触摸</strong>或是<strong>避开</strong>它们。</p>`,
+                `<p>接下来你将看到一些神秘的方块，你需要选择<strong>接近</strong>或是<strong>远离</strong>它们。</p>`,
                 `<p>你初始有<strong>4枚</strong>硬币。</p>`,
-                `<p>在特定条件下，如果你选择<strong>触摸</strong>，你可能得到一枚硬币或失去两枚硬币（有一定规律而非随机）。</p>`,
-                `<p>如果你选择<strong>避开</strong>，则你的硬币数量没有任何变化。</p>`,
+                `<p>在特定条件下，如果你选择<strong>接近</strong>，你可能得到一枚硬币或失去两枚硬币（有一定规律而非随机）。</p>`,
+                `<p>如果你选择<strong>远离</strong>，则你的硬币数量没有任何变化。</p>`,
                 `<p>你的目标是在结束时获得<strong>尽可能多</strong>的硬币。</p>`
             ],
             check_q1: "1. 你初始有多少硬币？",
-            check_q2: "2. 如果你选择“避开”，你的硬币会发生什么变化？",
+            check_q2: "2. 如果你选择“远离”，你的硬币会发生什么变化？",
             check_q3: "3. 你的目标是什么？",
-            summary: "摘要：触摸可能获得或失去硬币，避开无变化。目标：获得尽可能多的硬币",
-            approach_btn_text: "触摸",
-            avoid_btn_text: "避开",
-            stimuli: { 
-                'zaff1': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1_phy/hh1.png', './stimuli/exp1_phy/hh2.png', './stimuli/exp1_phy/hh3.png', './stimuli/exp1_phy/hh4.png'] },
-                'zaff2': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1_phy/sh1.png', './stimuli/exp1_phy/sh2.png', './stimuli/exp1_phy/sh3.png', './stimuli/exp1_phy/sh4.png'] },
-                'zaff3': { type: 'zaff', outcome: 1, images: ['./stimuli/exp1_phy/hs1.png', './stimuli/exp1_phy/hs2.png', './stimuli/exp1_phy/hs3.png', './stimuli/exp1_phy/hs4.png'] },
-                'nonzaff4': { type: 'nonzaff', outcome: -2, images: ['./stimuli/exp1_phy/ss1.png', './stimuli/exp1_phy/ss2.png', './stimuli/exp1_phy/ss3.png', './stimuli/exp1_phy/ss4.png'] }
+            summary: "摘要：接近可能获得或失去硬币，远离无变化。目标：获得尽可能多的硬币",
+            approach_btn_text: "接近",
+            avoid_btn_text: "远离",
+            stimuli: {
+                 block1: {
+                    'hh': { images: ['./stimuli/exp1_phy/hh1.png', './stimuli/exp1_phy/hh2.png', './stimuli/exp1_phy/hh3.png', './stimuli/exp1_phy/hh4.png'] },
+                    'sh': { images: ['./stimuli/exp1_phy/sh1.png', './stimuli/exp1_phy/sh2.png', './stimuli/exp1_phy/sh3.png', './stimuli/exp1_phy/sh4.png'] },
+                    'hs': { images: ['./stimuli/exp1_phy/hs1.png', './stimuli/exp1_phy/hs2.png', './stimuli/exp1_phy/hs3.png', './stimuli/exp1_phy/hs4.png'] },
+                    'ss': { images: ['./stimuli/exp1_phy/ss1.png', './stimuli/exp1_phy/ss2.png', './stimuli/exp1_phy/ss3.png', './stimuli/exp1_phy/ss4.png'] }
+                },
+                block2: {
+                    'ff': { images: ['./stimuli/exp1_phy/ff5.png', './stimuli/exp1_phy/ff6.png', './stimuli/exp1_phy/ff7.png', './stimuli/exp1_phy/ff8.png'] },
+                    'fs': { images: ['./stimuli/exp1_phy/fs5.png', './stimuli/exp1_phy/fs6.png', './stimuli/exp1_phy/fs7.png', './stimuli/exp1_phy/fs8.png'] },
+                    'sf': { images: ['./stimuli/exp1_phy/sf5.png', './stimuli/exp1_phy/sf6.png', './stimuli/exp1_phy/sf7.png', './stimuli/exp1_phy/sf8.png'] },
+                    'ss_block2': { images: ['./stimuli/exp1_phy/ss5.png', './stimuli/exp1_phy/ss6.png', './stimuli/exp1_phy/ss7.png', './stimuli/exp1_phy/ss8.png'] }
+                }
             }
         },
         exp2: {
             instructions: [
-                `<p>假设在一个世界中，有个魔法师能用精神力量在一定程度上操纵物质，但不同的操纵方式消耗的精神力量不同。</p>`,
+                `<p>假设在一个世界中，有个魔法师能用魔法在一定程度上操纵物质，但不同的操纵方式消耗的魔法不同。</p>`,
                 `<p>接下来，你将看到十种操纵物质的方式。</p>`,
                 `<p>请你根据你的直觉判断，对它们可能<strong>消耗精神力量的多少</strong>进行<strong>由多到少</strong>的排序。</p>`
             ],
@@ -115,14 +134,15 @@ const conditionConfig = {
                 { id: 'item-Split', text: '分裂' },
                 { id: 'item-Stone', text: '石化' },
                 { id: 'item-Color', text: '渲染' },
-                { id: 'item-Invisible', text: '潜藏' },
+                { id: 'item-Invisible', text: '隐形' },
                 { id: 'item-Teleport', text: '传送' }
             ]
         }
     }
 };
 
-// A pre-generated trial order satisfying the Latin Square and no-repeat constraints.
+// A pre-generated trial order (for roles) satisfying Latin Square and no-repeat constraints.
+// This order will be used for EACH block.
 const exp1TrialOrder = [
     'zaff1', 'nonzaff4', 'zaff2', 'zaff3',
     'nonzaff4', 'zaff1', 'zaff3', 'zaff2',
@@ -130,29 +150,83 @@ const exp1TrialOrder = [
     'zaff3', 'zaff2', 'zaff1', 'nonzaff4'
 ];
 
-function generateTrialList() {
-    const condition = participantData.condition;
-    const exp1Stimuli = conditionConfig[condition].exp1.stimuli;
-
-    const sequentialImages = {
-        zaff1: [...exp1Stimuli.zaff1.images],
-        zaff2: [...exp1Stimuli.zaff2.images],
-        zaff3: [...exp1Stimuli.zaff3.images],
-        nonzaff4: [...exp1Stimuli.nonzaff4.images]
+function getStimulusRoleMapping(blockName, nonzaffCondition) {
+    const block1Types = ['hh', 'hs', 'sh', 'ss'];
+    const block2Types = ['ff', 'fs', 'sf', 'ss_block2'];
+    const oppositeMap = {
+        'hh': 'ss', 'ss': 'hh', 'hs': 'sh', 'sh': 'hs',
+        'ff': 'ss_block2', 'ss_block2': 'ff', 'fs': 'sf', 'sf': 'fs'
     };
 
-    generatedExp1Trials = exp1TrialOrder.map(stimulusId => {
-        const imagePath = sequentialImages[stimulusId].shift();
-        if (!imagePath) {
-            console.error(`Ran out of images for stimulus type: ${stimulusId}`);
-        }
-        return {
-            stimulusId: stimulusId,
-            imagePath: imagePath
-        };
-    });
-    logEvent('Exp1 Trial List Generated', { count: generatedExp1Trials.length, condition: condition });
+    const types = blockName === 'block1' ? block1Types : block2Types;
+    
+    // Determine the nonzaff type based on the condition (same logic for both blocks)
+    let nonzaffType;
+    if (nonzaffCondition === 1) nonzaffType = types[3]; // ss or ss_block2
+    else if (nonzaffCondition === 2) nonzaffType = types[0]; // hh or ff
+    else if (nonzaffCondition === 3) nonzaffType = types[1]; // hs or fs
+    else if (nonzaffCondition === 4) nonzaffType = types[2]; // sh or sf
+
+    const zaffTypes = types.filter(t => t !== nonzaffType);
+    const zaff1Type = oppositeMap[nonzaffType];
+    const remainingZaffTypes = zaffTypes.filter(t => t !== zaff1Type);
+
+    return {
+        'nonzaff4': { type: nonzaffType, outcome: -2 },
+        'zaff1':    { type: zaff1Type, outcome: 1 },
+        'zaff2':    { type: remainingZaffTypes[0], outcome: 1 },
+        'zaff3':    { type: remainingZaffTypes[1], outcome: 1 }
+    };
 }
+
+
+function generateTrialList() {
+    const mainCondition = participantData.condition;
+    const blockOrder = participantData.block_order;
+    const nonzaffCondition = participantData.nonzaff_condition;
+    
+    generatedExp1Trials = []; // Clear previous trials
+
+    // Iterate through the determined block order
+    blockOrder.forEach(blockName => {
+        const roleMapping = getStimulusRoleMapping(blockName, nonzaffCondition);
+        const stimuliForBlock = conditionConfig[mainCondition].exp1.stimuli[blockName];
+
+        // Create a copy of image paths for this block to consume
+        const sequentialImages = {};
+        for (const key in stimuliForBlock) {
+            sequentialImages[key] = [...stimuliForBlock[key].images];
+        }
+
+        const blockTrials = exp1TrialOrder.map(role => {
+            const mapping = roleMapping[role];
+            const stimulusType = mapping.type;
+            const outcome = mapping.outcome;
+            const imagePath = sequentialImages[stimulusType].shift();
+
+            if (!imagePath) {
+                console.error(`Ran out of images for stimulus type: ${stimulusType} in block: ${blockName}`);
+            }
+
+            return {
+                block: blockName,
+                stimulus_role: role, // e.g., zaff1, nonzaff4
+                stimulus_type: stimulusType, // e.g., hh, ss
+                imagePath: imagePath,
+                outcome: outcome
+            };
+        });
+        generatedExp1Trials.push(...blockTrials);
+    });
+
+    logEvent('Exp1 Trial List Generated', { 
+        count: generatedExp1Trials.length, 
+        condition: mainCondition,
+        block_order: blockOrder,
+        nonzaff_condition: nonzaffCondition
+    });
+}
+
 
 // --- DOM ELEMENTS ---
 const pages = document.querySelectorAll('.page');
@@ -223,13 +297,23 @@ document.getElementById('start-btn').addEventListener('click', () => {
     participantData.startTime = performance.now();
 
     // --- CONDITION ASSIGNMENT ---
+    // Assign main condition (contextual vs physical)
     const conditions = ['physical', 'contextual'];
     participantData.condition = conditions[Math.floor(Math.random() * conditions.length)];
-    logEvent('Condition Assigned', { condition: participantData.condition });
+    logEvent('Main Condition Assigned', { condition: participantData.condition });
+
+    // Assign block order
+    const blockOrders = [['block1', 'block2'], ['block2', 'block1']];
+    participantData.block_order = blockOrders[Math.floor(Math.random() * blockOrders.length)];
+    logEvent('Block Order Assigned', { order: participantData.block_order });
+    
+    // Assign nonzaff condition
+    participantData.nonzaff_condition = Math.floor(Math.random() * 4) + 1; // Random integer from 1 to 4
+    logEvent('Nonzaff Condition Assigned', { nonzaff: participantData.nonzaff_condition });
     // --- END CONDITION ASSIGNMENT ---
 
     logEvent('Experiment Start');
-    generateTrialList(); // Generate trials after condition is set
+    generateTrialList(); // Generate trials after all conditions are set
     startMouseTracking();
     showPage('page-consent');
 });
@@ -301,18 +385,16 @@ function runExp1Trial() {
     }
 
     const currentTrial = generatedExp1Trials[exp1TrialIndex];
-    const stimulusId = currentTrial.stimulusId;
-    const imagePath = currentTrial.imagePath;
-    const exp1Stimuli = conditionConfig[participantData.condition].exp1.stimuli;
-    const stimulus = exp1Stimuli[stimulusId];
-
-    stimulusContainer.innerHTML = `<img src="${imagePath}" class="w-full h-full object-contain" alt="stimulus image">`;
+    
+    stimulusContainer.innerHTML = `<img src="${currentTrial.imagePath}" class="w-full h-full object-contain" alt="stimulus image">`;
     choiceButtons.classList.remove('hidden');
 
     const trialData = {
         trial_index: exp1TrialIndex + 1,
-        stimulus: stimulusId,
-        imagePath: imagePath,
+        block: currentTrial.block,
+        stimulus_role: currentTrial.stimulus_role,
+        stimulus_type: currentTrial.stimulus_type,
+        imagePath: currentTrial.imagePath,
         start_time: performance.now(),
         choice: null,
         rt: null,
@@ -321,7 +403,7 @@ function runExp1Trial() {
         coins_after: null
     };
 
-    logEvent('Stimulus Presented', { trial: trialData.trial_index, stimulus: stimulusId, image: imagePath });
+    logEvent('Stimulus Presented', { trial: trialData.trial_index, stimulus_type: currentTrial.stimulus_type, image: currentTrial.imagePath });
 
     const handleChoice = (choice) => {
         // Remove listeners to prevent multiple clicks
@@ -335,7 +417,7 @@ function runExp1Trial() {
         let feedbackText = '';
 
         if (choice === 'approach') {
-            outcome = stimulus.outcome;
+            outcome = currentTrial.outcome; // Get outcome from the generated trial list
             coins += outcome;
             feedbackText = outcome > 0 ? `你获得了 ${outcome} 个硬币` : `你失去了 ${-outcome} 个硬币`;
         } else { // 'avoid'
@@ -352,7 +434,13 @@ function runExp1Trial() {
 
         setTimeout(() => {
             stimulusContainer.innerHTML = ''; // Clear feedback
-            nextTrialContainer.classList.remove('hidden'); // Show the "Next Trial" button
+            // Check if it's the end of the first block
+            if (exp1TrialIndex === TOTAL_TRIALS_PER_BLOCK - 1) {
+                logEvent('Experiment 1 First Block Ended');
+                showPage('page-exp1-mid-break');
+            } else {
+                 nextTrialContainer.classList.remove('hidden'); // Show the "Next Trial" button
+            }
         }, 1000); // 1-second feedback duration
     };
 
@@ -369,6 +457,15 @@ function endExp1() {
     document.getElementById('final-coin-count').textContent = coins;
     showPage('page-exp1-break');
 }
+
+// --- PAGE: EXP 1 MID-BLOCK BREAK ---
+document.getElementById('to-next-block-btn').addEventListener('click', () => {
+    showPage('page-exp1-formal');
+    nextTrialContainer.classList.add('hidden');
+    exp1TrialIndex++;
+    runExp1Trial();
+});
+
 
 // --- PAGE 6: EXP 1 BREAK ---
 document.getElementById('to-exp2-btn').addEventListener('click', () => {
@@ -542,10 +639,12 @@ function convertJsonToCsv(data) {
         if (cell === null || cell === undefined) {
             return '';
         }
+         // Handle arrays by joining them with a separator
+        if (Array.isArray(cell)) {
+            return `"${cell.join('-')}"`;
+        }
         const str = String(cell);
-        // If the string contains a comma, a double quote, or a newline, enclose it in double quotes.
         if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-            // Escape existing double quotes by doubling them
             return `"${str.replace(/"/g, '""')}"`;
         }
         return str;
@@ -555,8 +654,8 @@ function convertJsonToCsv(data) {
 
     // Section 1: Participant Info
     csvContent += "# PARTICIPANT INFO\r\n";
-    const infoHeaders = ['id', 'age', 'gender', "handedness", 'condition', 'startTime', 'endTime', 'finalCoins_exp1'];
-    const infoValues = [data.id, data.age, data.gender, data.handedness, data.condition, data.startTime, data.endTime, data.exp1.finalCoins];
+    const infoHeaders = ['id', 'age', 'gender', "handedness", 'condition', 'block_order', 'nonzaff_condition', 'startTime', 'endTime', 'finalCoins_exp1'];
+    const infoValues = [data.id, data.age, data.gender, data.handedness, data.condition, data.block_order, data.nonzaff_condition, data.startTime, data.endTime, data.exp1.finalCoins];
     csvContent += infoHeaders.join(',') + "\r\n";
     csvContent += infoValues.map(escapeCsvCell).join(',') + "\r\n";
 
@@ -681,10 +780,18 @@ function setupDebugMode() {
                 participantData.age = 99;
                 participantData.gender = 'other';
                 participantData.startTime = performance.now();
-                // Assign a default condition for debugging
+                
+                 // Assign a default condition for debugging
                 const conditions = ['physical', 'contextual'];
                 participantData.condition = conditions[Math.floor(Math.random() * conditions.length)];
-                logEvent('Condition Assigned (Debug)', { condition: participantData.condition });
+                const blockOrders = [['block1', 'block2'], ['block2', 'block1']];
+                participantData.block_order = blockOrders[Math.floor(Math.random() * blockOrders.length)];
+                participantData.nonzaff_condition = Math.floor(Math.random() * 4) + 1;
+                logEvent('Conditions Assigned (Debug)', { 
+                    condition: participantData.condition,
+                    block_order: participantData.block_order,
+                    nonzaff_condition: participantData.nonzaff_condition
+                });
 
                 generateTrialList();
                 logEvent('Experiment Start (Debug)');

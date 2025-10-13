@@ -843,72 +843,139 @@ function setupDebugMode() {
     const debugPageList = document.getElementById('debug-page-list');
     if (!debugMenu || !debugPageList) return;
 
+    // Clear existing content and add condition selectors
+    debugPageList.innerHTML = '';
+
+    const createSelector = (id, label, options) => {
+        const container = document.createElement('div');
+        container.className = 'flex items-center gap-2 w-full';
+        const labelEl = document.createElement('label');
+        labelEl.textContent = label;
+        labelEl.className = 'text-sm font-medium text-gray-700';
+        const selectEl = document.createElement('select');
+        selectEl.id = id;
+        selectEl.className = 'mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md';
+        options.forEach(opt => {
+            const optionEl = document.createElement('option');
+            optionEl.value = opt.value;
+            optionEl.textContent = opt.text;
+            selectEl.appendChild(optionEl);
+        });
+        container.appendChild(labelEl);
+        container.appendChild(selectEl);
+        return container;
+    };
+
+    const conditionSelector = createSelector('debug-condition-select', 'Condition:', [
+        { value: 'contextual', text: 'Contextual' },
+        { value: 'physical', text: 'Physical' }
+    ]);
+    const blockOrderSelector = createSelector('debug-block-order-select', 'Block Order:', [
+        { value: 'block1,block2', text: 'Block 1 -> 2' },
+        { value: 'block2,block1', text: 'Block 2 -> 1' }
+    ]);
+    const nonzaffSelector = createSelector('debug-nonzaff-select', 'Non-zaff:', [
+        { value: '1', text: '1' },
+        { value: '2', text: '2' },
+        { value: '3', text: '3' },
+        { value: '4', text: '4' }
+    ]);
+    
+    debugPageList.appendChild(conditionSelector);
+    debugPageList.appendChild(blockOrderSelector);
+    debugPageList.appendChild(nonzaffSelector);
+
+    const separator = document.createElement('hr');
+    separator.className = 'my-2';
+    debugPageList.appendChild(separator);
+
     pages.forEach(page => {
         const pageId = page.id;
         const button = document.createElement('button');
-        button.textContent = pageId;
+        button.textContent = `Go to: ${pageId}`;
         button.className = 'bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 border border-gray-400 rounded shadow w-full text-left';
 
         button.addEventListener('click', () => {
+            // Set conditions from debug menu before jumping
+            const selectedCondition = document.getElementById('debug-condition-select').value;
+            const selectedBlockOrderStr = document.getElementById('debug-block-order-select').value;
+            const selectedNonzaff = parseInt(document.getElementById('debug-nonzaff-select').value, 10);
+            
             if (!participantData.startTime) {
                 participantData.id = 'debug_user';
                 participantData.age = 99;
                 participantData.gender = 'other';
                 participantData.startTime = performance.now();
-                
-                const conditions = ['physical', 'contextual'];
-                participantData.condition = conditions[Math.floor(Math.random() * conditions.length)];
-                
-                const blockOrders = [['block1', 'block2'], ['block2', 'block1']];
-                participantData.block_order = blockOrders[Math.floor(Math.random() * blockOrders.length)];
-                participantData.nonzaff_condition = Math.floor(Math.random() * 4) + 1;
-                logEvent('Conditions Assigned (Debug)', { 
-                    condition: participantData.condition,
-                    block_order: participantData.block_order,
-                    nonzaff_condition: participantData.nonzaff_condition
-                });
-
-                generateTrialList();
-                logEvent('Experiment Start (Debug)');
                 startMouseTracking();
+                logEvent('Experiment Start (Debug)');
             }
+
+            participantData.condition = selectedCondition;
+            participantData.block_order = selectedBlockOrderStr.split(',');
+            participantData.nonzaff_condition = selectedNonzaff;
             
+            logEvent('Conditions Set (Debug)', { 
+                condition: participantData.condition,
+                block_order: participantData.block_order,
+                nonzaff_condition: participantData.nonzaff_condition
+            });
+            
+            generateTrialList();
+
             // Trigger the same content-loading logic as the real flow
             if (page.id === 'page-exp1-instructions') {
-                showFirstBlockInstructions(); // This will correctly set coins and show instructions
-            }
-            if (page.id === 'page-exp1-check') {
-                const condition = participantData.condition;
-                document.getElementById('exp1-q1-text').textContent = conditionConfig[condition].exp1.check_q1;
-                document.getElementById('exp1-q2-text').textContent = conditionConfig[condition].exp1.check_q2;
-                document.getElementById('exp1-q3-text').textContent = conditionConfig[condition].exp1.check_q3;
-            }
-            if (pageId === 'page-exp1-formal') {
-                 const condition = participantData.condition;
-                document.getElementById('approach-btn').textContent = conditionConfig[condition].exp1.approach_btn_text;
-                document.getElementById('avoid-btn').textContent = conditionConfig[condition].exp1.avoid_btn_text;
-                 // Set initial coins if jumping directly here
-                if(exp1TrialIndex === 0) {
-                     showFirstBlockInstructions();
+                showFirstBlockInstructions(); // This will correctly set coins and show instructions based on debug settings
+            } else if (page.id === 'page-exp1-check') {
+                // We need to set the coin value correctly for the check page
+                if (participantData.condition === 'physical' && participantData.block_order[0] === 'block2') {
+                    coins = 8;
+                } else {
+                    coins = 4;
                 }
+                coinCountEl.textContent = coins;
+                document.getElementById('exp1-q1-text').textContent = conditionConfig[selectedCondition].exp1.check_q1;
+                document.getElementById('exp1-q2-text').textContent = conditionConfig[selectedCondition].exp1.check_q2;
+                document.getElementById('exp1-q3-text').textContent = conditionConfig[selectedCondition].exp1.check_q3;
+                 showPage(pageId);
+            } else if (pageId === 'page-exp1-formal') {
+                 // Set initial coins and summary before starting the trial run
+                if(exp1TrialIndex === 0) {
+                    const firstBlock = participantData.block_order[0];
+                     if (participantData.condition === 'physical') {
+                        if (firstBlock === 'block2') {
+                            coins = 8;
+                            document.getElementById('exp1-summary').textContent = "摘要：接近可能获得2或失去1硬币，远离无变化。目标：获得尽可能多的硬币";
+                        } else {
+                            coins = 4;
+                            document.getElementById('exp1-summary').textContent = "摘要：接近可能获得1或失去2硬币，远离无变化。目标：获得尽可能多的硬币";
+                        }
+                    } else {
+                        coins = 4;
+                        document.getElementById('exp1-summary').textContent = conditionConfig.contextual.exp1.summary;
+                    }
+                    coinCountEl.textContent = coins;
+                }
+                document.getElementById('approach-btn').textContent = conditionConfig[selectedCondition].exp1.approach_btn_text;
+                document.getElementById('avoid-btn').textContent = conditionConfig[selectedCondition].exp1.avoid_btn_text;
+                showPage(pageId);
                 runExp1Trial();
-            }
-             if (page.id === 'page-exp2-instructions') {
-                const condition = participantData.condition;
-                const instructions = conditionConfig[condition].exp2.instructions;
+            } else if (page.id === 'page-exp2-instructions') {
+                const instructions = conditionConfig[selectedCondition].exp2.instructions;
                 document.getElementById('exp2-instructions-content').innerHTML = instructions.join('');
-            }
-             if (page.id === 'page-exp2-check') {
-                const condition = participantData.condition;
-                document.getElementById('exp2-q1-text').textContent = conditionConfig[condition].exp2.check_q1;
-                document.getElementById('exp2-q2-text').textContent = conditionConfig[condition].exp2.check_q2;
-            }
-            if (pageId === 'page-exp2-formal') {
+                 showPage(pageId);
+            } else if (page.id === 'page-exp2-check') {
+                document.getElementById('exp2-q1-text').textContent = conditionConfig[selectedCondition].exp2.check_q1;
+                document.getElementById('exp2-q2-text').textContent = conditionConfig[selectedCondition].exp2.check_q2;
+                 showPage(pageId);
+            } else if (pageId === 'page-exp2-formal') {
                 if (document.getElementById('draggable-container').children.length === 0) {
                     setupExp2();
                 }
+                 showPage(pageId);
+            } else {
+                 showPage(pageId);
             }
-            showPage(pageId);
+            
             debugMenu.classList.add('hidden');
         });
         debugPageList.appendChild(button);
@@ -925,6 +992,7 @@ function setupDebugMode() {
         }
     });
 }
+
 
 // --- INITIALIZATION ---
 window.onload = () => {

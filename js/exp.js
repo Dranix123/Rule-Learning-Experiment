@@ -96,12 +96,11 @@ const conditionConfig = {
                 `<p>你的目标是在结束时获得<strong>尽可能多</strong>的硬币。</p>`
             ],
             instructions_block2: [ // Instructions for Block 2
-                `<p><strong>--- 规则变化 ---</strong></p>`,
-                `<p>接下来你将看到一些新的神秘方块。</p>`,
                 `<p>在这个部分开始时，你的硬币数量为<strong>8枚</strong>。</p>`,
-                `<p>规则有所改变：如果你选择<strong>接近</strong>，你可能得到<strong>两枚</strong>硬币或失去<strong>一枚</strong>硬币。</p>`,
+                `<p>如果你选择<strong>接近</strong>，你可能得到<strong>两枚</strong>硬币或失去<strong>一枚</strong>硬币。</p>`,
                 `<p>如果你选择<strong>远离</strong>，你的硬币数量仍然没有任何变化。</p>`,
-                `<p>你的目标仍然是在结束时获得<strong>尽可能多</strong>的硬币。</p>`
+                `<p>你的目标仍然是在结束时获得<strong>尽可能多</strong>的硬币。</p>`,
+                `<p></strong>注意：</strong>两部分获得或失去的规则可能稍有变化</p>`
             ],
             check_q1: "1. 在这个部分开始时，你有多少硬币？",
             check_q2: "2. 如果你选择“远离”，你的硬币会发生什么变化？",

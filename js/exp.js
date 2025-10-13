@@ -13,7 +13,7 @@ const participantData = {
     log: [],
     exp1: {
         trials: [],
-        finalCoins: 0
+        finalCoins: 0 // Note: For the 'physical' condition, this only reflects the final coin count of the last block.
     },
     exp2: {
         ranking: [],
@@ -23,7 +23,7 @@ const participantData = {
 };
 let mouseTrackerInterval;
 let lastMousePosition = { x: 0, y: 0 };
-let coins = 4;
+let coins = 4; // This is a default value; it will be explicitly set before each block begins.
 let exp1TrialIndex = 0;
 const TOTAL_TRIALS_PER_BLOCK = 16;
 let generatedExp1Trials = [];
@@ -88,17 +88,25 @@ const conditionConfig = {
     //物理条件
     physical: {
         exp1: {
-            instructions: [
+            instructions: [ // Instructions for Block 1
                 `<p>接下来你将看到一些神秘的方块，你需要选择<strong>接近</strong>或是<strong>远离</strong>它们。</p>`,
-                `<p>你初始有<strong>4枚</strong>硬币。</p>`,
+                `<p>在这个部分开始时，你的硬币数量为<strong>4枚</strong>。</p>`,
                 `<p>在特定条件下，如果你选择<strong>接近</strong>，你可能得到一枚硬币或失去两枚硬币（有一定规律而非随机）。</p>`,
                 `<p>如果你选择<strong>远离</strong>，则你的硬币数量没有任何变化。</p>`,
                 `<p>你的目标是在结束时获得<strong>尽可能多</strong>的硬币。</p>`
             ],
-            check_q1: "1. 你初始有多少硬币？",
+            instructions_block2: [ // Instructions for Block 2
+                `<p><strong>--- 规则变化 ---</strong></p>`,
+                `<p>接下来你将看到一些新的神秘方块。</p>`,
+                `<p>在这个部分开始时，你的硬币数量为<strong>8枚</strong>。</p>`,
+                `<p>规则有所改变：如果你选择<strong>接近</strong>，你可能得到<strong>两枚</strong>硬币或失去<strong>一枚</strong>硬币。</p>`,
+                `<p>如果你选择<strong>远离</strong>，你的硬币数量仍然没有任何变化。</p>`,
+                `<p>你的目标仍然是在结束时获得<strong>尽可能多</strong>的硬币。</p>`
+            ],
+            check_q1: "1. 在这个部分开始时，你有多少硬币？",
             check_q2: "2. 如果你选择“远离”，你的硬币会发生什么变化？",
             check_q3: "3. 你的目标是什么？",
-            summary: "摘要：接近可能获得或失去硬币，远离无变化。目标：获得尽可能多的硬币",
+            summary: "摘要：接近可能获得或失去硬币，远离无变化。目标：获得尽可能多的硬币", // This will be dynamically updated
             approach_btn_text: "接近",
             avoid_btn_text: "远离",
             stimuli: {
@@ -151,6 +159,30 @@ const exp1TrialOrder = [
 ];
 
 function getStimulusRoleMapping(blockName, nonzaffCondition) {
+    // Special outcome rules for physical condition's block2
+    if (participantData.condition === 'physical' && blockName === 'block2') {
+        const block2Types = ['ff', 'fs', 'sf', 'ss_block2'];
+        const oppositeMap = { 'ff': 'ss_block2', 'ss_block2': 'ff', 'fs': 'sf', 'sf': 'fs' };
+        
+        let nonzaffType;
+        if (nonzaffCondition === 1) nonzaffType = block2Types[3];      // ss_block2
+        else if (nonzaffCondition === 2) nonzaffType = block2Types[0]; // ff
+        else if (nonzaffCondition === 3) nonzaffType = block2Types[1]; // fs
+        else if (nonzaffCondition === 4) nonzaffType = block2Types[2]; // sf
+
+        const zaffTypes = block2Types.filter(t => t !== nonzaffType);
+        const zaff1Type = oppositeMap[nonzaffType];
+        const remainingZaffTypes = zaffTypes.filter(t => t !== zaff1Type);
+
+        return {
+            'nonzaff4': { type: nonzaffType, outcome: 2 },  // Gain 2
+            'zaff1':    { type: zaff1Type, outcome: -1 }, // Lose 1
+            'zaff2':    { type: remainingZaffTypes[0], outcome: -1 }, // Lose 1
+            'zaff3':    { type: remainingZaffTypes[1], outcome: -1 }  // Lose 1
+        };
+    }
+    
+    // Original logic for all other cases (contextual condition, and physical's block1)
     const block1Types = ['hh', 'hs', 'sh', 'ss'];
     const block2Types = ['ff', 'fs', 'sf', 'ss_block2'];
     const oppositeMap = {
@@ -160,22 +192,21 @@ function getStimulusRoleMapping(blockName, nonzaffCondition) {
 
     const types = blockName === 'block1' ? block1Types : block2Types;
     
-    // Determine the nonzaff type based on the condition (same logic for both blocks)
     let nonzaffType;
-    if (nonzaffCondition === 1) nonzaffType = types[3]; // ss or ss_block2
-    else if (nonzaffCondition === 2) nonzaffType = types[0]; // hh or ff
-    else if (nonzaffCondition === 3) nonzaffType = types[1]; // hs or fs
-    else if (nonzaffCondition === 4) nonzaffType = types[2]; // sh or sf
+    if (nonzaffCondition === 1) nonzaffType = types[3];
+    else if (nonzaffCondition === 2) nonzaffType = types[0];
+    else if (nonzaffCondition === 3) nonzaffType = types[1];
+    else if (nonzaffCondition === 4) nonzaffType = types[2];
 
     const zaffTypes = types.filter(t => t !== nonzaffType);
     const zaff1Type = oppositeMap[nonzaffType];
     const remainingZaffTypes = zaffTypes.filter(t => t !== zaff1Type);
 
     return {
-        'nonzaff4': { type: nonzaffType, outcome: -2 },
-        'zaff1':    { type: zaff1Type, outcome: 1 },
-        'zaff2':    { type: remainingZaffTypes[0], outcome: 1 },
-        'zaff3':    { type: remainingZaffTypes[1], outcome: 1 }
+        'nonzaff4': { type: nonzaffType, outcome: -2 }, // Original outcome
+        'zaff1':    { type: zaff1Type, outcome: 1 },     // Original outcome
+        'zaff2':    { type: remainingZaffTypes[0], outcome: 1 }, // Original outcome
+        'zaff3':    { type: remainingZaffTypes[1], outcome: 1 }  // Original outcome
     };
 }
 
@@ -297,17 +328,14 @@ document.getElementById('start-btn').addEventListener('click', () => {
     participantData.startTime = performance.now();
 
     // --- CONDITION ASSIGNMENT ---
-    // Assign main condition (contextual vs physical)
     const conditions = ['physical', 'contextual'];
     participantData.condition = conditions[Math.floor(Math.random() * conditions.length)];
     logEvent('Main Condition Assigned', { condition: participantData.condition });
 
-    // Assign block order
     const blockOrders = [['block1', 'block2'], ['block2', 'block1']];
     participantData.block_order = blockOrders[Math.floor(Math.random() * blockOrders.length)];
     logEvent('Block Order Assigned', { order: participantData.block_order });
     
-    // Assign nonzaff condition
     participantData.nonzaff_condition = Math.floor(Math.random() * 4) + 1; // Random integer from 1 to 4
     logEvent('Nonzaff Condition Assigned', { nonzaff: participantData.nonzaff_condition });
     // --- END CONDITION ASSIGNMENT ---
@@ -324,15 +352,40 @@ const consentBtn = document.getElementById('consent-btn');
 consentCheckbox.addEventListener('change', () => {
     consentBtn.disabled = !consentCheckbox.checked;
 });
+
+// Logic to show correct instructions AND set initial coins for the FIRST block
+function showFirstBlockInstructions() {
+    const condition = participantData.condition;
+    const firstBlock = participantData.block_order[0];
+    let instructions;
+
+    if (condition === 'physical') {
+        if (firstBlock === 'block2') {
+            coins = 8; // Set initial coins for block2
+            instructions = conditionConfig.physical.exp1.instructions_block2;
+            document.getElementById('exp1-summary').textContent = "摘要：接近可能获得2或失去1硬币，远离无变化。目标：获得尽可能多的硬币";
+        } else { // firstBlock is 'block1'
+            coins = 4; // Set initial coins for block1
+            instructions = conditionConfig.physical.exp1.instructions;
+            document.getElementById('exp1-summary').textContent = "摘要：接近可能获得1或失去2硬币，远离无变化。目标：获得尽可能多的硬币";
+        }
+    } else { // contextual condition
+        coins = 4; // Set initial coins for the whole experiment
+        instructions = conditionConfig.contextual.exp1.instructions;
+        document.getElementById('exp1-summary').textContent = conditionConfig.contextual.exp1.summary;
+    }
+    
+    coinCountEl.textContent = coins; // Update UI with the correct starting coins
+    document.getElementById('exp1-instructions-content').innerHTML = instructions.join('');
+    showPage('page-exp1-instructions');
+}
+
 consentBtn.addEventListener('click', () => {
     if (consentCheckbox.checked) {
-        showPage('page-exp1-instructions');
-        // Load conditional content for Exp1 Instructions
-        const condition = participantData.condition;
-        const instructions = conditionConfig[condition].exp1.instructions;
-        document.getElementById('exp1-instructions-content').innerHTML = instructions.join('');
+        showFirstBlockInstructions();
     }
 });
+
 
 // --- PAGE 3: EXP 1 INSTRUCTIONS ---
 document.getElementById('exp1-instr-btn').addEventListener('click', () => {
@@ -351,13 +404,17 @@ document.getElementById('exp1-check-btn').addEventListener('click', () => {
     const q3 = document.querySelector('input[name="q3"]:checked')?.value;
     const errorEl = document.getElementById('exp1-check-error');
 
-    if (q1 === '4' && q2 === 'no_change' && q3 === 'max_coins') {
+    // Correct answer for coins depends on which block is FIRST
+    let correctCoinAnswer = '4'; // Default for contextual and physical block1
+    if (participantData.condition === 'physical' && participantData.block_order[0] === 'block2') {
+        correctCoinAnswer = '8';
+    }
+
+    if (q1 === correctCoinAnswer && q2 === 'no_change' && q3 === 'max_coins') {
         errorEl.classList.add('hidden');
         logEvent('Exp1 Comprehension Check Passed');
         
-        // Load conditional content for Exp1 Formal
         const condition = participantData.condition;
-        document.getElementById('exp1-summary').textContent = conditionConfig[condition].exp1.summary;
         document.getElementById('approach-btn').textContent = conditionConfig[condition].exp1.approach_btn_text;
         document.getElementById('avoid-btn').textContent = conditionConfig[condition].exp1.avoid_btn_text;
 
@@ -368,11 +425,7 @@ document.getElementById('exp1-check-btn').addEventListener('click', () => {
         logEvent('Exp1 Comprehension Check Failed');
         setTimeout(() => {
             errorEl.classList.add('hidden');
-            // Also need to reload instructions when sending them back
-            const condition = participantData.condition;
-            const instructions = conditionConfig[condition].exp1.instructions;
-            document.getElementById('exp1-instructions-content').innerHTML = instructions.join('');
-            showPage('page-exp1-instructions');
+            showFirstBlockInstructions(); // Go back to the correct first block instructions
         }, 2000);
     }
 });
@@ -406,7 +459,6 @@ function runExp1Trial() {
     logEvent('Stimulus Presented', { trial: trialData.trial_index, stimulus_type: currentTrial.stimulus_type, image: currentTrial.imagePath });
 
     const handleChoice = (choice) => {
-        // Remove listeners to prevent multiple clicks
         document.getElementById('approach-btn').removeEventListener('click', approachHandler);
         document.getElementById('avoid-btn').removeEventListener('click', avoidHandler);
 
@@ -417,9 +469,13 @@ function runExp1Trial() {
         let feedbackText = '';
 
         if (choice === 'approach') {
-            outcome = currentTrial.outcome; // Get outcome from the generated trial list
+            outcome = currentTrial.outcome;
             coins += outcome;
-            feedbackText = outcome > 0 ? `你获得了 ${outcome} 个硬币` : `你失去了 ${-outcome} 个硬币`;
+            if (outcome > 0) {
+                 feedbackText = `你获得了 ${outcome} 个硬币`;
+            } else {
+                 feedbackText = `你失去了 ${-outcome} 个硬币`;
+            }
         } else { // 'avoid'
             feedbackText = '你的硬币没有变化';
         }
@@ -434,14 +490,27 @@ function runExp1Trial() {
 
         setTimeout(() => {
             stimulusContainer.innerHTML = ''; // Clear feedback
-            // Check if it's the end of the first block
+            // Check for mid-experiment break
             if (exp1TrialIndex === TOTAL_TRIALS_PER_BLOCK - 1) {
                 logEvent('Experiment 1 First Block Ended');
-                showPage('page-exp1-mid-break');
+                if (participantData.condition === 'contextual') {
+                    showPage('page-exp1-mid-break'); // Original break page for contextual
+                } else {
+                    // For physical condition, show the instructions for the next block
+                    const secondBlock = participantData.block_order[1];
+                    let instructions;
+                    if (secondBlock === 'block2') {
+                        instructions = conditionConfig.physical.exp1.instructions_block2;
+                    } else { // second block is block1
+                        instructions = conditionConfig.physical.exp1.instructions;
+                    }
+                    document.getElementById('exp1-b2-instructions-content').innerHTML = instructions.join('');
+                    showPage('page-exp1-b2-instructions');
+                }
             } else {
-                 nextTrialContainer.classList.remove('hidden'); // Show the "Next Trial" button
+                 nextTrialContainer.classList.remove('hidden');
             }
-        }, 1000); // 1-second feedback duration
+        }, 1000);
     };
 
     const approachHandler = () => handleChoice('approach');
@@ -458,8 +527,29 @@ function endExp1() {
     showPage('page-exp1-break');
 }
 
-// --- PAGE: EXP 1 MID-BLOCK BREAK ---
+// --- PAGE: EXP 1 MID-BLOCK BREAKS ---
+// This button is for the contextual condition's simple break
 document.getElementById('to-next-block-btn').addEventListener('click', () => {
+    showPage('page-exp1-formal');
+    nextTrialContainer.classList.add('hidden');
+    exp1TrialIndex++;
+    runExp1Trial();
+});
+
+// This button is for the physical condition's break, which also RESETS COINS for the next block
+document.getElementById('to-next-block-btn-b2').addEventListener('click', () => {
+    const secondBlock = participantData.block_order[1];
+    
+    // Reset coins and update summary text based on which block is coming next
+    if (secondBlock === 'block2') {
+        coins = 8;
+        document.getElementById('exp1-summary').textContent = "摘要：接近可能获得2或失去1硬币，远离无变化。目标：获得尽可能多的硬币";
+    } else { // second block is block1
+        coins = 4;
+        document.getElementById('exp1-summary').textContent = "摘要：接近可能获得1或失去2硬币，远离无变化。目标：获得尽可能多的硬币";
+    }
+    coinCountEl.textContent = coins; // Update UI with reset coin value
+
     showPage('page-exp1-formal');
     nextTrialContainer.classList.add('hidden');
     exp1TrialIndex++;
@@ -469,7 +559,6 @@ document.getElementById('to-next-block-btn').addEventListener('click', () => {
 
 // --- PAGE 6: EXP 1 BREAK ---
 document.getElementById('to-exp2-btn').addEventListener('click', () => {
-    // Load conditional content for Exp2 Instructions
     const condition = participantData.condition;
     const instructions = conditionConfig[condition].exp2.instructions;
     document.getElementById('exp2-instructions-content').innerHTML = instructions.join('');
@@ -478,7 +567,6 @@ document.getElementById('to-exp2-btn').addEventListener('click', () => {
 
 // --- PAGE 7: EXP 2 INSTRUCTIONS ---
 document.getElementById('exp2-instr-btn').addEventListener('click', () => {
-    // Load conditional content for Exp2 Check
     const condition = participantData.condition;
     document.getElementById('exp2-q1-text').textContent = conditionConfig[condition].exp2.check_q1;
     document.getElementById('exp2-q2-text').textContent = conditionConfig[condition].exp2.check_q2;
@@ -516,14 +604,10 @@ function setupExp2() {
     const draggableContainer = document.getElementById('draggable-container');
     const dropZoneContainer = document.getElementById('drop-zone-container');
 
-    // Clear any previous items
     draggableContainer.innerHTML = '';
     dropZoneContainer.innerHTML = '';
-
-    // Load conditional instruction
     document.getElementById('exp2-ranking-instruction').innerHTML = conditionConfig[condition].exp2.ranking_instruction;
 
-    // Shuffle items before displaying
     const shuffledItems = [...exp2Items].sort(() => Math.random() - 0.5);
 
     shuffledItems.forEach(item => {
@@ -575,7 +659,6 @@ function addDragAndDropListeners() {
             e.preventDefault();
             zone.classList.remove('over');
 
-            // If zone already has an item, move it back to the list
             const existingItem = zone.querySelector('.draggable-item');
             if (existingItem) {
                 document.getElementById('draggable-container').appendChild(existingItem);
@@ -587,7 +670,6 @@ function addDragAndDropListeners() {
         });
     });
 
-    // Allow dropping back into the original container
     const draggableContainer = document.getElementById('draggable-container');
     draggableContainer.addEventListener('dragover', e => e.preventDefault());
     draggableContainer.addEventListener('drop', e => {
@@ -639,7 +721,6 @@ function convertJsonToCsv(data) {
         if (cell === null || cell === undefined) {
             return '';
         }
-         // Handle arrays by joining them with a separator
         if (Array.isArray(cell)) {
             return `"${cell.join('-')}"`;
         }
@@ -708,7 +789,7 @@ function convertJsonToCsv(data) {
 }
 
 function downloadData() {
-    if (dataDownloaded) return; // Prevent multiple downloads
+    if (dataDownloaded) return; 
     dataDownloaded = true;
 
     const participantId = participantData.id || 'unknown_id';
@@ -742,19 +823,16 @@ function endExperiment() {
     logEvent('Experiment End');
     showPage('page-end');
 
-    // For the experimenter to get the data
     console.log("--- 最终被试数据 ---");
     console.log(JSON.stringify(participantData, null, 2));
     document.getElementById('final-data-display').textContent = JSON.stringify(participantData, null, 2);
     document.getElementById('final-data-display').parentElement.classList.remove('hidden');
 
-    // Add listeners for download
     document.getElementById('download-data-btn').addEventListener('click', downloadData);
     const downloadKeyListener = (e) => {
-        // Prevent download if debug menu is triggered or if typing in an input.
         if (e.key !== 'm' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT') {
             downloadData();
-            window.removeEventListener('keydown', downloadKeyListener); // Remove after use
+            window.removeEventListener('keydown', downloadKeyListener);
         }
     };
     window.addEventListener('keydown', downloadKeyListener);
@@ -766,7 +844,6 @@ function setupDebugMode() {
     const debugPageList = document.getElementById('debug-page-list');
     if (!debugMenu || !debugPageList) return;
 
-    // Populate the menu with buttons for each page
     pages.forEach(page => {
         const pageId = page.id;
         const button = document.createElement('button');
@@ -774,16 +851,15 @@ function setupDebugMode() {
         button.className = 'bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 border border-gray-400 rounded shadow w-full text-left';
 
         button.addEventListener('click', () => {
-            // If experiment hasn't started, fill in dummy data
             if (!participantData.startTime) {
                 participantData.id = 'debug_user';
                 participantData.age = 99;
                 participantData.gender = 'other';
                 participantData.startTime = performance.now();
                 
-                 // Assign a default condition for debugging
                 const conditions = ['physical', 'contextual'];
                 participantData.condition = conditions[Math.floor(Math.random() * conditions.length)];
+                
                 const blockOrders = [['block1', 'block2'], ['block2', 'block1']];
                 participantData.block_order = blockOrders[Math.floor(Math.random() * blockOrders.length)];
                 participantData.nonzaff_condition = Math.floor(Math.random() * 4) + 1;
@@ -800,9 +876,7 @@ function setupDebugMode() {
             
             // Trigger the same content-loading logic as the real flow
             if (page.id === 'page-exp1-instructions') {
-                const condition = participantData.condition;
-                const instructions = conditionConfig[condition].exp1.instructions;
-                document.getElementById('exp1-instructions-content').innerHTML = instructions.join('');
+                showFirstBlockInstructions(); // This will correctly set coins and show instructions
             }
             if (page.id === 'page-exp1-check') {
                 const condition = participantData.condition;
@@ -812,9 +886,12 @@ function setupDebugMode() {
             }
             if (pageId === 'page-exp1-formal') {
                  const condition = participantData.condition;
-                document.getElementById('exp1-summary').textContent = conditionConfig[condition].exp1.summary;
                 document.getElementById('approach-btn').textContent = conditionConfig[condition].exp1.approach_btn_text;
                 document.getElementById('avoid-btn').textContent = conditionConfig[condition].exp1.avoid_btn_text;
+                 // Set initial coins if jumping directly here
+                if(exp1TrialIndex === 0) {
+                     showFirstBlockInstructions();
+                }
                 runExp1Trial();
             }
              if (page.id === 'page-exp2-instructions') {
@@ -838,7 +915,6 @@ function setupDebugMode() {
         debugPageList.appendChild(button);
     });
 
-    // Add key listener to toggle the debug menu visibility
     window.addEventListener('keydown', (e) => {
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') {
             return;

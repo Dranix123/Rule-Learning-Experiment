@@ -33,7 +33,7 @@
                 </div>
                 <div>
                     <label for="handedness" class="block text-sm font-medium text-gray-700">利手:</label>
-                    <select id="handedness" class="mt-1 block w-full px-3 py-2 bg-white border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    <select id="handedness" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="">请选择</option>
                         <option value="left">左手</option>
                         <option value="right">右手</option>
@@ -81,6 +81,7 @@
                     <div class="space-y-2 mt-2">
                         <div><label><input type="radio" name="q1" value="0"> 0</label></div>
                         <div><label><input type="radio" name="q1" value="4"> 4</label></div>
+                        <div><label><input type="radio" name="q1" value="8"> 8</label></div>
                         <div><label><input type="radio" name="q1" value="10"> 10</label></div>
                     </div>
                 </div>
@@ -129,8 +130,17 @@
     <div id="page-exp1-mid-break" class="page hidden">
         <div class="content-card">
             <h1 class="text-2xl font-bold mb-6">第一部分已完成</h1>
-            <p class="text-gray-600 mb-8">休息一下，准备好后请点击按钮继续下一部分。</p>
+            <p class="text-gray-600 mb-8">休息一下，准备好后请点击按钮继续下一部分。注意：两部分的规则可能稍有变化</p>
             <button id="to-next-block-btn" class="btn">继续</button>
+        </div>
+    </div>
+
+    <div id="page-exp1-b2-instructions" class="page hidden">
+        <div class="content-card">
+            <h1 class="text-2xl font-bold mb-6">下一部分：指导语</h1>
+            <div id="exp1-b2-instructions-content" class="text-left space-y-4">
+            </div>
+            <button id="to-next-block-btn-b2" class="btn mt-8">继续</button>
         </div>
     </div>
 

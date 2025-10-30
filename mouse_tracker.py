@@ -126,9 +126,10 @@ for index, trial in trials_df.iterrows():
     # 【已按您的要求修改】直接设置固定的坐标轴范围
     # [MODIFIED AS PER YOUR REQUEST] Directly set the fixed axis limits
     plt.xlim(0, 1500)
-    plt.ylim(100, 1000)
+    plt.ylim(0, 800)
     
-    plt.title(f'Mouse Trajectory of Trial {trial_index} ( stimulus: {trial["stimulus"]}, choice: {trial["choice"]} )')
+# 修正后的代码
+    plt.title(f'Mouse Trajectory of Trial {trial_index} ( stimulus_type: {trial["stimulus_type"]}, choice: {trial["choice"]} )')
     plt.xlabel('X Coordinate')
     plt.ylabel('Y Coordinate')
     plt.legend()

@@ -62,28 +62,19 @@ const conditionConfig = {
                 }
             }
         },
+        // === 修改：实验二 Contextual ===
         exp2: {
             instructions: [
                 `<p>假设在一个世界中，有个魔法师能用心灵魔力在一定程度上操纵他人的心灵，但不同的操纵方式消耗的心灵魔力不同。</p>`,
-                `<p>接下来，你将看到十种操纵心灵的方式。</p>`,
-                `<p>请你根据你的直觉判断，对它们可能<strong>消耗心灵魔力的多少</strong>进行<strong>由多到少</strong>的排序。</p>`
+                `<p>接下来，你将看到七种操纵心灵的方式。</p>`,
+                `<p>请你根据你的直觉判断，对它们可能<strong>消耗心灵魔力的多少</strong>进行<strong>由低到高</strong>的排序。</p>`
             ],
             check_q1: "1. 在这个任务中，你需要做什么？",
             check_q2: "2. 排序的顺序是什么？",
-            ranking_instruction: "请将下列项目拖拽到右侧方框中，进行<strong>由多到少</strong>排序（1为消耗最多）。",
-            items: [
-                { id: 'item-Levitate', text: '悬浮：使情绪的攀升过程变缓慢，如狂喜感在数分钟内才达到顶峰。' },
-                { id: 'item-Transform', text: '转化：将目标的一种情绪，转化为另一种性质相近的情绪，例如将“惊恐”转为“厌恶”。' },
-                { id: 'item-Cease', text: '终止：瞬间中止并清除目标的强烈情绪，使其内心归于虚无。' },
-                { id: 'item-Big', text: '放大：将目标的现有情绪放大，例如将“微恼”放大为“暴怒”。' },
-                { id: 'item-Conjure', text: '召唤：中性情境下，为目标凭空召唤出强烈而复杂的情绪，如乡愁。' },
-                { id: 'item-Split', text: '分裂：使目标对同一事物瞬间产生两种旗鼓相当的情绪，例如对毕业同时感到“悲伤”与“恐惧”。' },
-                { id: 'item-Stone', text: '石化：将目标当前情绪固化，使其在一段时间内完全不随外界变化。' },
-                { id: 'item-Color', text: '渲染：为目标当前的主要情绪，渲染上一抹细微的额外色彩，如在“开心”中染上“得意”。' },
-                { id: 'item-Invisible', text: '隐形：将目标的情绪压入潜意识，使其无法察觉，仍暗中影响行为。' },
-                { id: 'item-Teleport', text: '传送：将情绪的触发时刻延后，仿佛将其传送到了未来，例如，十分钟后才感受到本应立即产生的狂喜。' }
-            ]
+            ranking_instruction: "请将下列项目拖拽到下方排序栏中，进行<strong>由低到高</strong>排序（左侧消耗最低，右侧消耗最高）。",
+            items: ['color', 'stone', 'big', 'transform', 'cease', 'conjure', 'split']
         }
+        // === 结束修改 ===
     },
     //物理条件
     physical: {
@@ -123,28 +114,19 @@ const conditionConfig = {
                 }
             }
         },
+        // === 修改：实验二 Physical ===
         exp2: {
             instructions: [
                 `<p>假设在一个世界中，有个魔法师能用魔法在一定程度上操纵物质，但不同的操纵方式消耗的魔法不同。</p>`,
-                `<p>接下来，你将看到十种操纵物质的方式。</p>`,
-                `<p>请你根据你的直觉判断，对它们可能<strong>消耗精神力量的多少</strong>进行<strong>由多到少</strong>的排序。</p>`
+                `<p>接下来，你将看到七种操纵物质的方式。</p>`,
+                `<p>请你根据你的直觉判断，对它们可能<strong>消耗精神力量的多少</strong>进行<strong>由低到高</strong>的排序。</p>`
             ],
             check_q1: "1. 在这个任务中，你需要做什么？",
             check_q2: "2. 排序的顺序是什么？",
-            ranking_instruction: "请将下列项目拖拽到右侧方框中，进行<strong>由多到少</strong>排序（1为消耗最多）。",
-            items: [
-                { id: 'item-Levitate', text: '悬浮' },
-                { id: 'item-Transform', text: '转化' },
-                { id: 'item-Cease', text: '消失' },
-                { id: 'item-Big', text: '放大' },
-                { id: 'item-Conjure', text: '召唤' },
-                { id: 'item-Split', text: '分裂' },
-                { id: 'item-Stone', text: '石化' },
-                { id: 'item-Color', text: '渲染' },
-                { id: 'item-Invisible', text: '隐形' },
-                { id: 'item-Teleport', text: '传送' }
-            ]
+            ranking_instruction: "请将下列项目拖拽到下方排序栏中，进行<strong>由低到高</strong>排序（左侧消耗最低，右侧消耗最高）。",
+            items: ['color', 'stone', 'big', 'transform', 'cease', 'conjure', 'split']
         }
+        // === 结束修改 ===
     }
 };
 
@@ -265,14 +247,13 @@ const stimulusContainer = document.getElementById('stimulus-container');
 const choiceButtons = document.getElementById('choice-buttons');
 const nextTrialContainer = document.getElementById('next-trial-container');
 const nextTrialBtn = document.getElementById('next-trial-btn');
-let currentlyDragged = null;
+let currentlyDragged = null; // 用于跟踪当前拖拽的元素
 let dataDownloaded = false;
 
-// === 新增：获取 Audio 元素 ===
+// === 获取 Audio 元素 ===
 const gainSound = document.getElementById('gain-sound');
 const loseSound = document.getElementById('lose-sound');
 const neutralSound = document.getElementById('neutral-sound');
-// === 结束新增 ===
 
 
 // --- UTILITY FUNCTIONS ---
@@ -492,37 +473,18 @@ function runExp1Trial() {
 
         coinCountEl.textContent = coins;
         
-        // === 修改：播放声音和动画 ===
-        //
-        // **关键修复：**
-        // 使用 .load() 来代替 .pause() 和 .currentTime = 0。
-        // .load() 是一个更强硬的重置，它会中止所有播放
-        // 并将音频元素恢复到初始状态，为下一次 .play() 做准备。
-        //
-        if (gainSound) {
-            gainSound.load();
-        }
-        if (loseSound) {
-            loseSound.load();
-        }
-        if (neutralSound) {
-            neutralSound.load();
-        }
-        // === 修复结束 ===
-
+        // === 播放声音和动画 (使用 .load() 修复) ===
+        if (gainSound) gainSound.load();
+        if (loseSound) loseSound.load();
+        if (neutralSound) neutralSound.load();
 
         if (choice === 'avoid') {
-            // 1. 避免 (Outcome is 0)
             stimulusContainer.innerHTML = `<div class="feedback-animation neutral">${feedbackText}</div>`;
             if (neutralSound) neutralSound.play().catch(e => console.warn("中立音频播放失败", e));
-        
         } else if (outcome > 0) {
-            // 2. 接近 且 获得 (Outcome > 0)
             stimulusContainer.innerHTML = `<div class="feedback-animation gain">+${outcome} 🪙</div>`;
             if (gainSound) gainSound.play().catch(e => console.warn("增益音频播放失败", e));
-        
-        } else {
-            // 3. 接近 且 失去 (Outcome < 0)
+        } else { // outcome <= 0
             stimulusContainer.innerHTML = `<div class="feedback-animation lose">-${-outcome} 🪙</div>`;
             if (loseSound) loseSound.play().catch(e => console.warn("损失音频播放失败", e));
         }
@@ -614,12 +576,14 @@ document.getElementById('exp2-instr-btn').addEventListener('click', () => {
 });
 
 // --- PAGE 8: EXP 2 CHECK ---
+// === 修改：更新了实验二的正确答案 ===
 document.getElementById('exp2-check-btn').addEventListener('click', () => {
     const q1 = document.querySelector('input[name="q2-1"]:checked')?.value;
     const q2 = document.querySelector('input[name="q2-2"]:checked')?.value;
     const errorEl = document.getElementById('exp2-check-error');
 
-    if (q1 === 'b' && q2 === 'c') {
+    // 正确答案: q1='b' (排序), q2='a' (从少到多)
+    if (q1 === 'b' && q2 === 'a') {
         errorEl.classList.add('hidden');
         logEvent('Exp2 Comprehension Check Passed');
         showPage('page-exp2-formal');
@@ -636,53 +600,70 @@ document.getElementById('exp2-check-btn').addEventListener('click', () => {
         }, 2000);
     }
 });
+// === 结束修改 ===
+
 
 // --- PAGE 9: EXP 2 FORMAL ---
+// === 修改：重写 setupExp2 ===
 function setupExp2() {
     const condition = participantData.condition;
-    const exp2Items = conditionConfig[condition].exp2.items;
-    const draggableContainer = document.getElementById('draggable-container');
-    const dropZoneContainer = document.getElementById('drop-zone-container');
+    const exp2ItemIds = conditionConfig[condition].exp2.items; // 现在这是 ['color', 'stone', ...]
+    const sourceContainer = document.getElementById('exp2-source-container');
+    const rankingBar = document.getElementById('exp2-ranking-bar');
+    
+    // 确定图片路径
+    const imgPath = condition === 'physical' ? './stimuli/exp2_phy/' : './stimuli/exp2_emo/';
 
-    draggableContainer.innerHTML = '';
-    dropZoneContainer.innerHTML = '';
+    sourceContainer.innerHTML = '';
+    rankingBar.innerHTML = '';
     document.getElementById('exp2-ranking-instruction').innerHTML = conditionConfig[condition].exp2.ranking_instruction;
 
-    const shuffledItems = [...exp2Items].sort(() => Math.random() - 0.5);
+    const shuffledItems = [...exp2ItemIds].sort(() => Math.random() - 0.5);
 
-    shuffledItems.forEach(item => {
-        const itemEl = document.createElement('div');
-        itemEl.id = item.id;
-        itemEl.textContent = item.text;
-        itemEl.className = 'draggable-item';
-        itemEl.draggable = true;
-        draggableContainer.appendChild(itemEl);
+    // 1. 填充源容器 (顶部)
+    shuffledItems.forEach(itemId => {
+        const slotEl = document.createElement('div');
+        slotEl.className = 'exp2-item-slot drop-zone'; // 也是一个 drop-zone，用于放回
+        
+        const imgEl = document.createElement('img');
+        imgEl.id = `item-${itemId}`; // 保持 ID 格式
+        imgEl.src = `${imgPath}${itemId}.png`;
+        imgEl.className = 'exp2-draggable-img';
+        imgEl.draggable = true;
+        imgEl.dataset.itemId = itemId; // 存储原始 ID 用于保存数据
+
+        slotEl.appendChild(imgEl);
+        sourceContainer.appendChild(slotEl);
     });
 
-    for (let i = 1; i <= 10; i++) {
+    // 2. 填充排序栏 (底部)
+    for (let i = 1; i <= 7; i++) {
         const zone = document.createElement('div');
-        zone.className = 'drop-zone';
+        zone.className = 'exp2-item-slot drop-zone'; // 这是一个 drop-zone
         zone.dataset.rank = i;
-        zone.innerHTML = `<span class="font-bold text-base mr-4 text-gray-500 w-8">${i}.</span>`;
-        dropZoneContainer.appendChild(zone);
+        rankingBar.appendChild(zone);
     }
 
     addDragAndDropListeners();
 }
+// === 结束修改 ===
 
+// === 修改：重写 addDragAndDropListeners (添加交换逻辑) ===
 function addDragAndDropListeners() {
-    const draggables = document.querySelectorAll('.draggable-item');
-    const dropZones = document.querySelectorAll('.drop-zone');
+    const draggables = document.querySelectorAll('.exp2-draggable-img');
+    const dropZones = document.querySelectorAll('.drop-zone'); // 获取所有 14 个格子
+    currentlyDragged = null;
 
     draggables.forEach(draggable => {
         draggable.addEventListener('dragstart', (e) => {
             draggable.classList.add('dragging');
             currentlyDragged = draggable;
-            logEvent('Exp2 Drag Start', { itemId: draggable.id });
+            logEvent('Exp2 Drag Start', { itemId: draggable.dataset.itemId });
         });
+        
         draggable.addEventListener('dragend', () => {
             draggable.classList.remove('dragging');
-            logEvent('Exp2 Drag End', { itemId: currentlyDragged.id });
+            logEvent('Exp2 Drag End', { itemId: currentlyDragged.dataset.itemId });
             currentlyDragged = null;
         });
     });
@@ -692,46 +673,52 @@ function addDragAndDropListeners() {
             e.preventDefault();
             zone.classList.add('over');
         });
+
         zone.addEventListener('dragleave', () => {
             zone.classList.remove('over');
         });
+
         zone.addEventListener('drop', e => {
             e.preventDefault();
+            e.stopPropagation(); // 阻止事件冒泡到父元素
             zone.classList.remove('over');
 
-            const existingItem = zone.querySelector('.draggable-item');
-            if (existingItem) {
-                document.getElementById('draggable-container').appendChild(existingItem);
-            }
+            if (!currentlyDragged) return;
 
-            if (currentlyDragged) {
+            const existingItem = zone.querySelector('.exp2-draggable-img');
+            const sourceOfDrag = currentlyDragged.parentElement; // 拖拽源的格子
+
+            if (existingItem && existingItem !== currentlyDragged) {
+                // --- 交换 (Swap) 逻辑 ---
+                // 1. 将目标格 (zone) 里的现有图片 (existingItem) 移动到拖拽源的格子 (sourceOfDrag)
+                sourceOfDrag.appendChild(existingItem);
+                // 2. 将正在拖拽的图片 (currentlyDragged) 放入目标格 (zone)
+                zone.appendChild(currentlyDragged);
+            } else if (!existingItem) {
+                // --- 简单放置 (Drop) 逻辑 ---
+                // 目标格是空的，直接放入
                 zone.appendChild(currentlyDragged);
             }
+            // else: 拖拽到自己原来的格子上，什么也不做
         });
     });
-
-    const draggableContainer = document.getElementById('draggable-container');
-    draggableContainer.addEventListener('dragover', e => e.preventDefault());
-    draggableContainer.addEventListener('drop', e => {
-        e.preventDefault();
-        if (currentlyDragged) {
-            draggableContainer.appendChild(currentlyDragged);
-        }
-    });
 }
+// === 结束修改 ===
 
+
+// === 修改：更新确认按钮的逻辑 ===
 document.getElementById('confirm-ranking-btn').addEventListener('click', () => {
     const rankedItems = [];
-    const dropZones = document.querySelectorAll('.drop-zone');
+    // 只选择底部的排序栏
+    const dropZones = document.querySelectorAll('#exp2-ranking-bar .drop-zone');
     let allRanked = true;
 
     dropZones.forEach(zone => {
-        const item = zone.querySelector('.draggable-item');
+        const item = zone.querySelector('.exp2-draggable-img');
         if (item) {
             rankedItems.push({
                 rank: parseInt(zone.dataset.rank),
-                itemId: item.id,
-                text: item.textContent
+                itemId: item.dataset.itemId, // 从 data-item-id 获取
             });
         } else {
             allRanked = false;
@@ -739,7 +726,7 @@ document.getElementById('confirm-ranking-btn').addEventListener('click', () => {
     });
 
     if (!allRanked) {
-        alert('请将所有项目都排序。');
+        alert('请将所有项目都排序到下方的排序栏中。');
         return;
     }
 
@@ -747,6 +734,7 @@ document.getElementById('confirm-ranking-btn').addEventListener('click', () => {
     logEvent('Exp2 Ranking Confirmed', { ranking: rankedItems });
     endExperiment();
 });
+// === 结束修改 ===
 
 nextTrialBtn.addEventListener('click', () => {
     nextTrialContainer.classList.add('hidden');
@@ -1009,10 +997,9 @@ function setupDebugMode() {
                 document.getElementById('exp2-q2-text').textContent = conditionConfig[selectedCondition].exp2.check_q2;
                  showPage(pageId);
             } else if (pageId === 'page-exp2-formal') {
-                if (document.getElementById('draggable-container').children.length === 0) {
-                    setupExp2();
-                }
-                 showPage(pageId);
+                // 强制重新设置实验二
+                setupExp2();
+                showPage(pageId);
             } else {
                  showPage(pageId);
             }
@@ -1037,7 +1024,7 @@ function setupDebugMode() {
 
 // --- INITIALIZATION ---
 window.onload = () => {
-    participantData.log.push({ event: 'Script Loaded', timestamp: performance.now(), page: 'N/A' });
+    participantData.log.push({ event: 'Script Loaded', timestamp: performance.now(), page: 'N-A' });
     showPage('page-demographics');
     setupDebugMode();
 };

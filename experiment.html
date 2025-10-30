@@ -33,8 +33,54 @@
             font-size: 1.875rem; /* 30px */
             color: #6b7280; /* Tailwind gray-500 */
         }
+
+        /* === 修改：实验二 样式 === */
+
+        /* 拖拽槽 (空位) 和图片本身的容器 */
+        .exp2-item-slot {
+            width: 10.5rem; /* 168px, 略微缩小以适应单行 */
+            aspect-ratio: 5 / 4; /* 5:4 宽高比 */
+            background-color: #f9fafb; /* 关键：为所有格子添加灰色底 (bg-gray-50) */
+            border: 2px dashed #9ca3af; /* 关键：为所有格子添加虚线边框 */
+            border-radius: 0.5rem; /* rounded-lg */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0; /* 关键：移除内边距，让图片填满 */
+            transition: background-color 0.2s, border-color 0.2s;
+            flex-shrink: 0;
+        }
+
+        /* * 我们不再需要 #exp2-source-container .exp2-item-slot 
+         * 或 #exp2-ranking-bar .exp2-item-slot 的特殊规则，
+         * 因为现在源和目标（为空时）看起来完全一样。
+         */
+
+        /* 可拖拽的图片 */
+        .exp2-draggable-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 保持 cover 状态以填满 */
+            cursor: grab;
+            border-radius: 0.5rem; /* 匹配父容器的圆角 */
+            transition: opacity 0.2s;
+        }
+
+        /* 拖拽时的样式 */
+        .exp2-draggable-img.dragging {
+            opacity: 0.4;
+            cursor: grabbing;
+        }
+
+        /* 拖拽经过空位时的样式 */
+        .exp2-item-slot.over {
+            background-color: #dbeafe; /* bg-blue-100 */
+            border-color: #3b82f6; /* border-blue-500 */
+        }
+        /* === 结束修改 === */
     </style>
-    </head>
+
+</head>
 <body class="bg-gray-100 text-gray-800">
 
     <div id="page-demographics" class="page">
@@ -199,16 +245,14 @@
             <h1 class="text-2xl font-bold mb-6">理解测试</h1>
              <div class="text-left space-y-6">
                 <div class="question-group">
-                    <p id="exp2-q1-text" class="font-semibold"></p>
-                    <div class="space-y-2 mt-2">
-                        <div><label><input type="radio" name="q2-1" value="a"> 对十种魔力进行评分</label></div>
-                        <div><label><input type="radio" name="q2-1" value="b"> 对十种魔力按消耗的多少排序</label></div>
-                        <div><label><input type="radio" name="q2-1" value="c"> 选择你最喜欢的一种魔力</label></div>
+                    <p id="exp2-q1-text" class="font-semibold"></p> <div class="space-y-2 mt-2">
+                        <div><label><input type="radio" name="q2-1" value="a"> 对七种方式进行评分</label></div>
+                        <div><label><input type="radio" name="q2-1" value="b"> 对七种方式按消耗的多少排序</label></div>
+                        <div><label><input type="radio" name="q2-1" value="c"> 选择你最喜欢的一种方式</label></div>
                     </div>
                 </div>
                 <div class="question-group">
-                    <p id="exp2-q2-text" class="font-semibold"></p>
-                    <div class="space-y-2 mt-2">
+                    <p id="exp2-q2-text" class="font-semibold"></p> <div class="space-y-2 mt-2">
                         <div><label><input type="radio" name="q2-2" value="a"> 从消耗最少到最多</label></div>
                         <div><label><input type="radio" name="q2-2" value="b"> 随机排序</label></div>
                         <div><label><input type="radio" name="q2-2" value="c"> 从消耗最多到最少</label></div>
@@ -220,22 +264,25 @@
         </div>
     </div>
 
-    <div id="page-exp2-formal" class="page hidden">
-        <div class="content-card !max-w-6xl">
-             <p id="exp2-ranking-instruction" class="text-md text-gray-600 mb-4"></p>
-            <div class="flex flex-col md:flex-row gap-6">
-                <div id="draggable-container" class="w-full md:w-1/2 border rounded-lg p-2">
-                    </div>
 
-                <div class="w-full md:w-1/2">
-                    <div id="drop-zone-container">
-                    </div>
+    <div id="page-exp2-formal" class="page hidden">
+        <div class="content-card !max-w-7xl">
+             <p id="exp2-ranking-instruction" class="text-md text-gray-600 mb-6 text-center"></p>
+            
+            <div id="exp2-source-container" class="flex flex-wrap justify-center md:justify-center gap-1 mb-6">
                 </div>
+            <p class="text-center text-lg font-medium text-gray-500 mb-4">↓ 在下方排序 ↓</p>
+            <div id="exp2-ranking-bar" class="flex flex-wrap justify-center md:justify-center gap-1 rounded-lg bg-gray-100">
+                </div>
+
+            <div class="flex justify-between w-full px-2 mt-2">
+                <span class="font-semibold text-gray-600">消耗低</span>
+                <span class="font-semibold text-gray-600">消耗高</span>
             </div>
-            <button id="confirm-ranking-btn" class="btn mt-8">当你排序完成后点击确定</button>
+
+            <button id="confirm-ranking-btn" class="btn mt-10">当你排序完成后点击确定</button>
         </div>
     </div>
-
     <div id="page-end" class="page hidden">
         <div class="content-card">
             <h1 class="text-3xl font-bold text-green-600 mb-6">实验结束</h1>
@@ -259,6 +306,7 @@
     <audio id="gain-sound" src="sounds/gain.mp3" preload="auto"></audio>
     <audio id="lose-sound" src="sounds/lose.mp3" preload="auto"></audio>
     <audio id="neutral-sound" src="sounds/neutral.mp3" preload="auto"></audio>
+
     <script src="js/exp.js" charset="utf-8"></script>
 
 </body>

@@ -62,7 +62,6 @@ const conditionConfig = {
                 }
             }
         },
-        // === 修改：实验二 Contextual ===
         exp2: {
             instructions: [
                 `<p>假设在一个世界中，有个魔法师能用心灵魔力在一定程度上操纵他人的心灵，但不同的操纵方式消耗的心灵魔力不同。</p>`,
@@ -74,7 +73,6 @@ const conditionConfig = {
             ranking_instruction: "请将下列项目拖拽到下方排序栏中，进行<strong>由低到高</strong>排序（左侧消耗最低，右侧消耗最高）。",
             items: ['color', 'stone', 'big', 'transform', 'cease', 'conjure', 'split']
         }
-        // === 结束修改 ===
     },
     //物理条件
     physical: {
@@ -114,7 +112,6 @@ const conditionConfig = {
                 }
             }
         },
-        // === 修改：实验二 Physical ===
         exp2: {
             instructions: [
                 `<p>假设在一个世界中，有个魔法师能用魔法在一定程度上操纵物质，但不同的操纵方式消耗的魔法不同。</p>`,
@@ -126,7 +123,6 @@ const conditionConfig = {
             ranking_instruction: "请将下列项目拖拽到下方排序栏中，进行<strong>由低到高</strong>排序（左侧消耗最低，右侧消耗最高）。",
             items: ['color', 'stone', 'big', 'transform', 'cease', 'conjure', 'split']
         }
-        // === 结束修改 ===
     }
 };
 
@@ -286,7 +282,7 @@ function startMouseTracking() {
             y: lastMousePosition.y,
             timestamp: performance.now()
         });
-    }, 1000 / 100); // ~10Hz
+    }, 1000 / 16.67); // ~60Hz
 }
 
 function stopMouseTracking() {
@@ -604,14 +600,12 @@ document.getElementById('exp2-check-btn').addEventListener('click', () => {
 
 
 // --- PAGE 9: EXP 2 FORMAL ---
-// === 修改：重写 setupExp2 ===
 function setupExp2() {
     const condition = participantData.condition;
-    const exp2ItemIds = conditionConfig[condition].exp2.items; // 现在这是 ['color', 'stone', ...]
+    const exp2ItemIds = conditionConfig[condition].exp2.items; 
     const sourceContainer = document.getElementById('exp2-source-container');
     const rankingBar = document.getElementById('exp2-ranking-bar');
     
-    // 确定图片路径
     const imgPath = condition === 'physical' ? './stimuli/exp2_phy/' : './stimuli/exp2_emo/';
 
     sourceContainer.innerHTML = '';
@@ -646,9 +640,7 @@ function setupExp2() {
 
     addDragAndDropListeners();
 }
-// === 结束修改 ===
 
-// === 修改：重写 addDragAndDropListeners (添加交换逻辑) ===
 function addDragAndDropListeners() {
     const draggables = document.querySelectorAll('.exp2-draggable-img');
     const dropZones = document.querySelectorAll('.drop-zone'); // 获取所有 14 个格子
@@ -703,10 +695,8 @@ function addDragAndDropListeners() {
         });
     });
 }
-// === 结束修改 ===
 
 
-// === 修改：更新确认按钮的逻辑 ===
 document.getElementById('confirm-ranking-btn').addEventListener('click', () => {
     const rankedItems = [];
     // 只选择底部的排序栏
@@ -734,7 +724,6 @@ document.getElementById('confirm-ranking-btn').addEventListener('click', () => {
     logEvent('Exp2 Ranking Confirmed', { ranking: rankedItems });
     endExperiment();
 });
-// === 结束修改 ===
 
 nextTrialBtn.addEventListener('click', () => {
     nextTrialContainer.classList.add('hidden');

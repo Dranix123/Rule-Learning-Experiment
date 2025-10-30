@@ -20,7 +20,6 @@
             align-items: center;
             font-size: 3rem; /* 48px */
             font-weight: bold;
-            /* 动画持续时间为1秒，与 setTimeout 匹配 */
             animation: feedback-anim 1s ease-in-out forwards;
         }
         .feedback-animation.gain {
@@ -34,9 +33,7 @@
             color: #6b7280; /* Tailwind gray-500 */
         }
 
-        /* === 修改：实验二 样式 === */
 
-        /* 拖拽槽 (空位) 和图片本身的容器 */
         .exp2-item-slot {
             width: 10.5rem; /* 168px, 略微缩小以适应单行 */
             aspect-ratio: 5 / 4; /* 5:4 宽高比 */
@@ -51,12 +48,6 @@
             flex-shrink: 0;
         }
 
-        /* * 我们不再需要 #exp2-source-container .exp2-item-slot 
-         * 或 #exp2-ranking-bar .exp2-item-slot 的特殊规则，
-         * 因为现在源和目标（为空时）看起来完全一样。
-         */
-
-        /* 可拖拽的图片 */
         .exp2-draggable-img {
             width: 100%;
             height: 100%;

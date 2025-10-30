@@ -16,4 +16,5 @@
 
 ## References:
 Liquin, E. G., & Gopnik, A. (2022). Children are more exploratory and learn more than adults in an approach-avoid task. *Cognition*, *218*, Article 104940. https://doi.org/10.1016/j.cognition.2021.104940
+
 McCoy, J., & Ullman, T. (2019). Judgments of effort for magical violations of intuitive physics. *PLOS ONE*, *14*(5), Article e0217513. https://doi.org/10.1371/journal.pone.0217513

@@ -282,7 +282,7 @@ function startMouseTracking() {
             y: lastMousePosition.y,
             timestamp: performance.now()
         });
-    }, 1000 / 16.67); // ~60Hz
+    }, 1000 / 120); // ~120Hz
 }
 
 function stopMouseTracking() {

@@ -268,6 +268,12 @@ const nextTrialBtn = document.getElementById('next-trial-btn');
 let currentlyDragged = null;
 let dataDownloaded = false;
 
+// === 新增：获取 Audio 元素 ===
+const gainSound = document.getElementById('gain-sound');
+const loseSound = document.getElementById('lose-sound');
+const neutralSound = document.getElementById('neutral-sound');
+// === 结束新增 ===
+
 
 // --- UTILITY FUNCTIONS ---
 function logEvent(eventName, details = {}) {
@@ -465,15 +471,15 @@ function runExp1Trial() {
         trialData.rt = performance.now() - trialData.start_time;
         choiceButtons.classList.add('hidden');
         let outcome = 0;
-        let feedbackText = '';
+        let feedbackText = ''; // 纯文本反馈（用于“中立”情况）
 
         if (choice === 'approach') {
             outcome = currentTrial.outcome;
             coins += outcome;
             if (outcome > 0) {
-                 feedbackText = `你获得了 ${outcome} 个硬币`;
+                 feedbackText = `你获得了 ${outcome} 个硬币`; // 备用
             } else {
-                 feedbackText = `你失去了 ${-outcome} 个硬币`;
+                 feedbackText = `你失去了 ${-outcome} 个硬币`; // 备用
             }
         } else { // 'avoid'
             feedbackText = '你的硬币没有变化';
@@ -485,17 +491,52 @@ function runExp1Trial() {
         logEvent('Decision Made', trialData);
 
         coinCountEl.textContent = coins;
-        stimulusContainer.innerHTML = `<div class="p-4 text-2xl font-bold">${feedbackText}</div>`;
+        
+        // === 修改：播放声音和动画 ===
+        //
+        // **关键修复：**
+        // 使用 .load() 来代替 .pause() 和 .currentTime = 0。
+        // .load() 是一个更强硬的重置，它会中止所有播放
+        // 并将音频元素恢复到初始状态，为下一次 .play() 做准备。
+        //
+        if (gainSound) {
+            gainSound.load();
+        }
+        if (loseSound) {
+            loseSound.load();
+        }
+        if (neutralSound) {
+            neutralSound.load();
+        }
+        // === 修复结束 ===
+
+
+        if (choice === 'avoid') {
+            // 1. 避免 (Outcome is 0)
+            stimulusContainer.innerHTML = `<div class="feedback-animation neutral">${feedbackText}</div>`;
+            if (neutralSound) neutralSound.play().catch(e => console.warn("中立音频播放失败", e));
+        
+        } else if (outcome > 0) {
+            // 2. 接近 且 获得 (Outcome > 0)
+            stimulusContainer.innerHTML = `<div class="feedback-animation gain">+${outcome} 🪙</div>`;
+            if (gainSound) gainSound.play().catch(e => console.warn("增益音频播放失败", e));
+        
+        } else {
+            // 3. 接近 且 失去 (Outcome < 0)
+            stimulusContainer.innerHTML = `<div class="feedback-animation lose">-${-outcome} 🪙</div>`;
+            if (loseSound) loseSound.play().catch(e => console.warn("损失音频播放失败", e));
+        }
+        // === 结束修改 ===
 
         setTimeout(() => {
-            stimulusContainer.innerHTML = ''; // Clear feedback
-            // Check for mid-experiment break
+            stimulusContainer.innerHTML = ''; // 清除反馈
+            // 检查是否在实验中途休息
             if (exp1TrialIndex === TOTAL_TRIALS_PER_BLOCK - 1) {
                 logEvent('Experiment 1 First Block Ended');
                 if (participantData.condition === 'contextual') {
-                    showPage('page-exp1-mid-break'); // Original break page for contextual
+                    showPage('page-exp1-mid-break'); // contextual 的原始休息页面
                 } else {
-                    // For physical condition, show the instructions for the next block
+                    // 对于 physical 条件，显示下一个 block 的指导语
                     const secondBlock = participantData.block_order[1];
                     let instructions;
                     if (secondBlock === 'block2') {
@@ -509,7 +550,7 @@ function runExp1Trial() {
             } else {
                  nextTrialContainer.classList.remove('hidden');
             }
-        }, 1000);
+        }, 1000); // 动画和声音的持续时间（1秒）
     };
 
     const approachHandler = () => handleChoice('approach');
@@ -527,7 +568,7 @@ function endExp1() {
 }
 
 // --- PAGE: EXP 1 MID-BLOCK BREAKS ---
-// This button is for the contextual condition's simple break
+// 这个按钮用于 contextual 条件的简单休息
 document.getElementById('to-next-block-btn').addEventListener('click', () => {
     showPage('page-exp1-formal');
     nextTrialContainer.classList.add('hidden');
@@ -535,11 +576,11 @@ document.getElementById('to-next-block-btn').addEventListener('click', () => {
     runExp1Trial();
 });
 
-// This button is for the physical condition's break, which also RESETS COINS for the next block
+// 这个按钮用于 physical 条件的休息，并为下一个 block 重置硬币
 document.getElementById('to-next-block-btn-b2').addEventListener('click', () => {
     const secondBlock = participantData.block_order[1];
     
-    // Reset coins and update summary text based on which block is coming next
+    // 根据下一个 block 重置硬币和更新摘要文本
     if (secondBlock === 'block2') {
         coins = 8;
         document.getElementById('exp1-summary').textContent = "摘要：接近可能获得2或失去1硬币，远离无变化。目标：获得尽可能多的硬币";
@@ -547,7 +588,7 @@ document.getElementById('to-next-block-btn-b2').addEventListener('click', () => 
         coins = 4;
         document.getElementById('exp1-summary').textContent = "摘要：接近可能获得1或失去2硬币，远离无变化。目标：获得尽可能多的硬币";
     }
-    coinCountEl.textContent = coins; // Update UI with reset coin value
+    coinCountEl.textContent = coins; // 更新 UI 上的硬币数量
 
     showPage('page-exp1-formal');
     nextTrialContainer.classList.add('hidden');

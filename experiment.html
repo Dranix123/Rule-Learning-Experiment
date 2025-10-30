@@ -6,7 +6,35 @@
     <title>心理学决策行为实验</title>
     <script src="js/tailwindcss.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css">
-</head>
+    
+    <style>
+        @keyframes feedback-anim {
+            0% { transform: scale(0.8); opacity: 0; }
+            20% { transform: scale(1.1); opacity: 1; }
+            80% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0; }
+        }
+        .feedback-animation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem; /* 48px */
+            font-weight: bold;
+            /* 动画持续时间为1秒，与 setTimeout 匹配 */
+            animation: feedback-anim 1s ease-in-out forwards;
+        }
+        .feedback-animation.gain {
+            color: #16a34a; /* Tailwind green-600 */
+        }
+        .feedback-animation.lose {
+            color: #dc2626; /* Tailwind red-600 */
+        }
+        .feedback-animation.neutral {
+            font-size: 1.875rem; /* 30px */
+            color: #6b7280; /* Tailwind gray-500 */
+        }
+    </style>
+    </head>
 <body class="bg-gray-100 text-gray-800">
 
     <div id="page-demographics" class="page">
@@ -109,10 +137,12 @@
 
     <div id="page-exp1-formal" class="page hidden">
         <div class="content-card !max-w-6xl min-h-[93vh] flex flex-col">
-            <div class="w-full flex justify-between items-center mb-6">
-                <p id="exp1-summary" class="text-sm text-gray-500"></p>
-                <p class="text-lg font-bold">当前硬币🪙: <span id="coin-count">4</span></p>
+
+            <div id="choice-buttons" class="w-full flex justify-between pb-2 px-4">
+                <button id="approach-btn" class="btn"></button>
+                <button id="avoid-btn" class="btn"></button>
             </div>
+
             <div class="flex-1 w-full relative flex justify-center items-center">
                 <div id="stimulus-container" class="w-11/12 bg-gray-200 rounded-lg flex justify-center items-center text-gray-500 text-xl font-semibold" style="aspect-ratio: 16 / 9;">
                     </div>
@@ -120,10 +150,12 @@
                     <button id="next-trial-btn" class="btn">下一轮</button>
                 </div>
             </div>
-            <div id="choice-buttons" class="w-full flex justify-between pt-4 px-4">
-                <button id="approach-btn" class="btn"></button>
-                <button id="avoid-btn" class="btn btn-secondary"></button>
+
+            <div class="w-full flex justify-between items-center mt-2">
+                <p id="exp1-summary" class="text-sm text-gray-500"></p>
+                <p class="text-lg font-bold">当前硬币🪙: <span id="coin-count">4</span></p>
             </div>
+
         </div>
     </div>
 
@@ -223,6 +255,10 @@
         <div id="debug-page-list" class="flex flex-col gap-2 items-start">
             </div>
     </div>
+
+    <audio id="gain-sound" src="sounds/gain.mp3" preload="auto"></audio>
+    <audio id="lose-sound" src="sounds/lose.mp3" preload="auto"></audio>
+    <audio id="neutral-sound" src="sounds/neutral.mp3" preload="auto"></audio>
     <script src="js/exp.js" charset="utf-8"></script>
 
 </body>

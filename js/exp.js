@@ -85,10 +85,11 @@ const conditionConfig = {
                 `<p>你的目标是在结束时获得<strong>尽可能多</strong>的硬币。</p>`
             ],
             instructions_block2: [ // Instructions for Block 2
+                `<p>接下来你将看到一些神秘的方块，你需要选择<strong>接近</strong>或是<strong>远离</strong>它们。</p>`,
                 `<p>在这个部分开始时，你的硬币数量为<strong>8枚</strong>。</p>`,
                 `<p>如果你选择<strong>接近</strong>，你可能得到<strong>两枚</strong>硬币或失去<strong>一枚</strong>硬币。</p>`,
                 `<p>如果你选择<strong>远离</strong>，你的硬币数量仍然没有任何变化。</p>`,
-                `<p>你的目标仍然是在结束时获得<strong>尽可能多</strong>的硬币。</p>`,
+                `<p>你的目标是在结束时获得<strong>尽可能多</strong>的硬币。</p>`,
                 `<p></strong>注意：</strong>两部分获得或失去的规则可能稍有变化</p>`
             ],
             check_q1: "1. 在这个部分开始时，你有多少硬币？",
@@ -116,7 +117,7 @@ const conditionConfig = {
             instructions: [
                 `<p>假设在一个世界中，有个魔法师能用魔法在一定程度上操纵物质，但不同的操纵方式消耗的魔法不同。</p>`,
                 `<p>接下来，你将看到七种操纵物质的方式。</p>`,
-                `<p>请你根据你的直觉判断，对它们可能<strong>消耗精神力量的多少</strong>进行<strong>由低到高</strong>的排序。</p>`
+                `<p>请你根据你的直觉判断，对它们可能<strong>消耗魔力的多少</strong>进行<strong>由低到高</strong>的排序。</p>`
             ],
             check_q1: "1. 在这个任务中，你需要做什么？",
             check_q2: "2. 排序的顺序是什么？",
@@ -675,6 +676,11 @@ function addDragAndDropListeners() {
             e.stopPropagation(); // 阻止事件冒泡到父元素
             zone.classList.remove('over');
 
+            // --- 修改 1: 播放放下音效 ---
+            if (neutralSound) neutralSound.load();
+            if (neutralSound) neutralSound.play().catch(e => console.warn("Neutral audio playback failed", e));
+            // --- 结束修改 1 ---
+
             if (!currentlyDragged) return;
 
             const existingItem = zone.querySelector('.exp2-draggable-img');
@@ -697,6 +703,7 @@ function addDragAndDropListeners() {
 }
 
 
+// --- 修改 2: 更改确认按钮逻辑，自动下载并转到结束页 ---
 document.getElementById('confirm-ranking-btn').addEventListener('click', () => {
     const rankedItems = [];
     // 只选择底部的排序栏
@@ -720,10 +727,47 @@ document.getElementById('confirm-ranking-btn').addEventListener('click', () => {
         return;
     }
 
+    // 1. 保存实验二数据
     participantData.exp2.ranking = rankedItems;
     logEvent('Exp2 Ranking Confirmed', { ranking: rankedItems });
-    endExperiment();
+
+    // 2. 停止追踪并记录结束时间
+    stopMouseTracking();
+    participantData.endTime = performance.now();
+    logEvent('Experiment End');
+
+    // 3. 自动下载数据
+    downloadData();
+
+    // 4. 显示结束页面
+    showPage('page-end');
+
+    // 5. 隐藏结束页面上的下载相关元素
+    const downloadBtn = document.getElementById('download-data-btn');
+    if (downloadBtn) {
+        downloadBtn.classList.add('hidden');
+    }
+
+    const endPage = document.getElementById('page-end');
+    const paragraphs = endPage.querySelectorAll('.content-card p');
+    paragraphs.forEach(p => {
+        if (p.textContent.includes('下载')) { // 隐藏包含 "下载" 字样的 <p> 标签
+            p.classList.add('hidden');
+        }
+    });
+
+    // 6. 隐藏原始数据显示
+    const finalDataDisplay = document.getElementById('final-data-display');
+    if (finalDataDisplay && finalDataDisplay.parentElement) {
+        finalDataDisplay.parentElement.classList.add('hidden');
+    }
+    
+    // 7. 在控制台显示最终数据（用于调试）
+    console.log("--- 最终被试数据 ---");
+    console.log(JSON.stringify(participantData, null, 2));
 });
+// --- 结束修改 2 ---
+
 
 nextTrialBtn.addEventListener('click', () => {
     nextTrialContainer.classList.add('hidden');
@@ -834,26 +878,7 @@ function downloadData() {
     }
 }
 
-function endExperiment() {
-    stopMouseTracking();
-    participantData.endTime = performance.now();
-    logEvent('Experiment End');
-    showPage('page-end');
 
-    console.log("--- 最终被试数据 ---");
-    console.log(JSON.stringify(participantData, null, 2));
-    document.getElementById('final-data-display').textContent = JSON.stringify(participantData, null, 2);
-    document.getElementById('final-data-display').parentElement.classList.remove('hidden');
-
-    document.getElementById('download-data-btn').addEventListener('click', downloadData);
-    const downloadKeyListener = (e) => {
-        if (e.key !== 'm' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT') {
-            downloadData();
-            window.removeEventListener('keydown', downloadKeyListener);
-        }
-    };
-    window.addEventListener('keydown', downloadKeyListener);
-}
 
 // --- DEBUG MODE ---
 function setupDebugMode() {

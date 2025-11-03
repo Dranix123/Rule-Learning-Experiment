@@ -45,7 +45,6 @@
             align-items: center;
             padding: 0; 
             transition: background-color 0.2s, border-color 0.2s;
-            flex-shrink: 0;
         }
 
         .exp2-draggable-img {
@@ -188,7 +187,7 @@
             </div>
 
             <div class="w-full flex justify-between items-center mt-2">
-                <p id="exp1-summary" class="text-sm text-gray-500"></p>
+                <p id="exp1-summary" class="text-lg text-gray-800"></p>
                 <p class="text-lg font-bold">当前硬币🪙: <span id="coin-count">4</span></p>
             </div>
 
@@ -198,6 +197,7 @@
     <div id="page-exp1-mid-break" class="page hidden">
         <div class="content-card">
             <h1 class="text-2xl font-bold mb-6">第一部分已完成</h1>
+            <p class="text-lg font-bold">如你做得很棒！你在第一部分获得了<span id="coin-count">4</span>枚硬币🪙</p>
             <p class="text-gray-600 mb-8">休息一下，准备好后请点击按钮继续下一部分。注意：两部分的规则可能稍有变化</p>
             <button id="to-next-block-btn" class="btn">继续</button>
         </div>
@@ -237,7 +237,7 @@
                 <div class="question-group">
                     <p id="exp2-q1-text" class="font-semibold"></p> <div class="space-y-2 mt-2">
                         <div><label><input type="radio" name="q2-1" value="a"> 对七种方式进行评分</label></div>
-                        <div><label><input type="radio" name="q2-1" value="b"> 对七种方式按消耗的多少排序</label></div>
+                        <div><label><input type="radio" name="q2-1" value="b"> 对七种方式按消耗魔力的多少排序</label></div>
                         <div><label><input type="radio" name="q2-1" value="c"> 选择你最喜欢的一种方式</label></div>
                     </div>
                 </div>
@@ -259,10 +259,10 @@
         <div class="content-card !max-w-7xl">
              <p id="exp2-ranking-instruction" class="text-md text-gray-600 mb-6 text-center"></p>
             
-            <div id="exp2-source-container" class="flex flex-wrap justify-center md:justify-center gap-1 mb-6">
+            <div id="exp2-source-container" class="flex flex-nowrap justify-center md:justify-center gap-1 mb-6">
                 </div>
             <p class="text-center text-lg font-medium text-gray-500 mb-4">↓ 在下方排序 ↓</p>
-            <div id="exp2-ranking-bar" class="flex flex-wrap justify-center md:justify-center gap-1 rounded-lg bg-gray-100">
+            <div id="exp2-ranking-bar" class="flex flex-nowrap justify-center md:justify-center gap-1 rounded-lg bg-gray-100">
                 </div>
 
             <div class="flex justify-between w-full px-2 mt-2">

@@ -1,3 +1,4 @@
+
 // --- GLOBAL STATE ---
 let currentPage = 'page-demographics';
 const participantData = {
@@ -6,24 +7,25 @@ const participantData = {
     gender: null,
     handedness: null,
     condition: null, // contextual vs physical
-    block_order: null, // e.g., ['block1', 'block2'] or ['block2', 'block1']
+    block_order: null, // e.g., ['block1', 'block2']
     nonzaff_condition: null, // 1, 2, 3, or 4
     startTime: null,
     endTime: null,
     log: [],
     exp1: {
         trials: [],
-        finalCoins: 0 // Note: For the 'physical' condition, this only reflects the final coin count of the last block.
+        block1Coins: 0, // 单独记录 Block 1
+        block2Coins: 0  // 单独记录 Block 2
     },
     exp2: {
-        ranking: [],
-        dragEvents: []
+        ratings: [], // 改为 ratings
+        dragEvents: [] // 虽然不再拖拽，保留字段防止报错，或者用于其他交互记录
     },
     mouseTrajectory: []
 };
 let mouseTrackerInterval;
 let lastMousePosition = { x: 0, y: 0 };
-let coins = 4; // This is a default value; it will be explicitly set before each block begins.
+let coins = 4; // 初始硬币
 let exp1TrialIndex = 0;
 const TOTAL_TRIALS_PER_BLOCK = 16;
 let generatedExp1Trials = [];
@@ -36,15 +38,15 @@ const conditionConfig = {
         exp1: {
             instructions: [
                 `<p>接下来你将看到处在不同场景下的一些人，你需要选择<strong>接近</strong>或是<strong>远离</strong>他们。</p>`,
-                `<p>你初始有<strong>4枚</strong>硬币。</p>`,
-                `<p>特定条件组合下，如果你选择<strong>接近</strong>，你可能得到一枚硬币或失去两枚硬币（有一定规律而非随机）。</p>`,
+                `<p>每一部分开始时，你初始都有<strong>4枚</strong>硬币。</p>`,
+                `<p>特定条件组合下，如果你选择<strong>接近</strong>，你可能得到一枚硬币或失去两枚硬币（有一定规律）。</p>`,
                 `<p>如果你选择<strong>远离</strong>，则你的硬币数量没有任何变化。</p>`,
-                `<p>你的目标是在结束时获得<strong>尽可能多</strong>的硬币。</p>`
+                `<p>你的目标是获得<strong>尽可能多</strong>的硬币。</p>`
             ],
-            check_q1: "1. 你初始有多少硬币？",
+            check_q1: "1. 每部分开始时你有多少硬币？",
             check_q2: "2. 如果你选择“远离”，你的硬币会发生什么变化？",
             check_q3: "3. 你的目标是什么？",
-            summary: "摘要：接近可能获得或失去硬币，远离无变化。目标：获得尽可能多的硬币",
+            summary: "摘要：接近可能获得(+1)或失去(-2)硬币，远离无变化。目标：获得尽可能多的硬币",
             approach_btn_text: "接近",
             avoid_btn_text: "远离",
             stimuli: {
@@ -54,7 +56,7 @@ const conditionConfig = {
                     'hs': { images: ['./stimuli/exp1_emo/hs1.png', './stimuli/exp1_emo/hs2.png', './stimuli/exp1_emo/hs3.png', './stimuli/exp1_emo/hs4.png'] },
                     'ss': { images: ['./stimuli/exp1_emo/ss1.png', './stimuli/exp1_emo/ss2.png', './stimuli/exp1_emo/ss3.png', './stimuli/exp1_emo/ss4.png'] }
                 },
-                block2: { // Note: using 'ff', 'fs', 'sf', 'ss' as identifiers for block2 stimuli
+                block2: { 
                     'ff': { images: ['./stimuli/exp1_emo/ff5.png', './stimuli/exp1_emo/ff6.png', './stimuli/exp1_emo/ff7.png', './stimuli/exp1_emo/ff8.png'] },
                     'fs': { images: ['./stimuli/exp1_emo/fs5.png', './stimuli/exp1_emo/fs6.png', './stimuli/exp1_emo/fs7.png', './stimuli/exp1_emo/fs8.png'] },
                     'sf': { images: ['./stimuli/exp1_emo/sf5.png', './stimuli/exp1_emo/sf6.png', './stimuli/exp1_emo/sf7.png', './stimuli/exp1_emo/sf8.png'] },
@@ -65,37 +67,30 @@ const conditionConfig = {
         exp2: {
             instructions: [
                 `<p>假设在一个世界中，有个魔法师能用心灵魔力在一定程度上操纵他人的心灵，但不同的操纵方式消耗的心灵魔力不同。</p>`,
-                `<p>接下来，你将看到七种操纵心灵的方式。</p>`,
-                `<p>请你根据你的直觉判断，对它们可能<strong>消耗心灵魔力的多少</strong>进行<strong>由低到高</strong>的排序。</p>`
+                `<p>我们以<strong>“Big (变大)”</strong>作为基准，它的魔力消耗定义为 <strong>10分</strong>。</p>`,
+                `<p>接下来，请你以“Big”为参照，通过拖动滑块对其他六种方式消耗的魔力进行打分（0-100分）。</p>`
             ],
             check_q1: "1. 在这个任务中，你需要做什么？",
-            check_q2: "2. 排序的顺序是什么？",
-            ranking_instruction: "请将下列项目拖拽到下方排序栏中，进行<strong>由低到高</strong>排序（左侧消耗最低，右侧消耗最高）。",
+            check_q2: "2. 评分的基准“Big”是多少分？",
+            rating_instruction: "请以 <strong>Big (10分)</strong> 为基准，滑动滑块判断其他项目的魔力消耗。",
             items: ['color', 'stone', 'big', 'transform', 'cease', 'conjure', 'split']
         }
     },
     //物理条件
     physical: {
         exp1: {
-            instructions: [ // Instructions for Block 1
+            instructions: [ 
                 `<p>接下来你将看到一些神秘的方块，你需要选择<strong>接近</strong>或是<strong>远离</strong>它们。</p>`,
-                `<p>在这个部分开始时，你的硬币数量为<strong>4枚</strong>。</p>`,
-                `<p>在特定条件下，如果你选择<strong>接近</strong>，你可能得到一枚硬币或失去两枚硬币（有一定规律而非随机）。</p>`,
+                `<p>每一部分开始时，你初始都有<strong>4枚</strong>硬币。</p>`,
+                `<p>特定条件组合下，如果你选择<strong>接近</strong>，你可能得到一枚硬币或失去两枚硬币（有一定规律）。</p>`,
                 `<p>如果你选择<strong>远离</strong>，则你的硬币数量没有任何变化。</p>`,
-                `<p>你的目标是在结束时获得<strong>尽可能多</strong>的硬币。</p>`
+                `<p>你的目标是获得<strong>尽可能多</strong>的硬币。</p>`
             ],
-            instructions_block2: [ // Instructions for Block 2
-                `<p>接下来你将看到一些神秘的方块，你需要选择<strong>接近</strong>或是<strong>远离</strong>它们。</p>`,
-                `<p>在这个部分开始时，你的硬币数量为<strong>8枚</strong>。</p>`,
-                `<p>如果你选择<strong>接近</strong>，你可能得到<strong>两枚</strong>硬币或失去<strong>一枚</strong>硬币。</p>`,
-                `<p>如果你选择<strong>远离</strong>，你的硬币数量仍然没有任何变化。</p>`,
-                `<p>你的目标是在结束时获得<strong>尽可能多</strong>的硬币。</p>`,
-                `<p></strong>注意：</strong>两部分获得或失去的规则可能稍有变化</p>`
-            ],
-            check_q1: "1. 在这个部分开始时，你有多少硬币？",
+            // 物理条件现在两个block规则一致，不再需要 separate instructions for block 2 regarding rules
+            check_q1: "1. 每部分开始时你有多少硬币？",
             check_q2: "2. 如果你选择“远离”，你的硬币会发生什么变化？",
             check_q3: "3. 你的目标是什么？",
-            summary: "摘要：接近可能获得或失去硬币，远离无变化。目标：获得尽可能多的硬币", // This will be dynamically updated
+            summary: "摘要：接近可能获得(+1)或失去(-2)硬币，远离无变化。目标：获得尽可能多的硬币", 
             approach_btn_text: "接近",
             avoid_btn_text: "远离",
             stimuli: {
@@ -116,19 +111,18 @@ const conditionConfig = {
         exp2: {
             instructions: [
                 `<p>假设在一个世界中，有个魔法师能用魔法在一定程度上操纵物质，但不同的操纵方式消耗的魔法不同。</p>`,
-                `<p>接下来，你将看到七种操纵物质的方式。</p>`,
-                `<p>请你根据你的直觉判断，对它们可能<strong>消耗魔力的多少</strong>进行<strong>由低到高</strong>的排序。</p>`
+                `<p>我们以<strong>“Big (变大)”</strong>作为基准，它的魔力消耗定义为 <strong>10分</strong>。</p>`,
+                `<p>接下来，请你以“Big”为参照，通过拖动滑块对其他六种方式消耗的魔力进行打分（0-100分）。</p>`
             ],
             check_q1: "1. 在这个任务中，你需要做什么？",
-            check_q2: "2. 排序的顺序是什么？",
-            ranking_instruction: "请将下列项目拖拽到下方排序栏中，进行<strong>由低到高</strong>排序（左侧消耗最低，右侧消耗最高）。",
+            check_q2: "2. 评分的基准“Big”是多少分？",
+            rating_instruction: "请以 <strong>Big (10分)</strong> 为基准，滑动滑块判断其他项目的魔力消耗。",
             items: ['color', 'stone', 'big', 'transform', 'cease', 'conjure', 'split']
         }
     }
 };
 
-// A pre-generated trial order (for roles) satisfying Latin Square and no-repeat constraints.
-// This order will be used for EACH block.
+// Latin Square / Fixed order
 const exp1TrialOrder = [
     'zaff1', 'nonzaff4', 'zaff2', 'zaff3',
     'nonzaff4', 'zaff1', 'zaff3', 'zaff2',
@@ -137,30 +131,9 @@ const exp1TrialOrder = [
 ];
 
 function getStimulusRoleMapping(blockName, nonzaffCondition) {
-    // Special outcome rules for physical condition's block2
-    if (participantData.condition === 'physical' && blockName === 'block2') {
-        const block2Types = ['ff', 'fs', 'sf', 'ss_block2'];
-        const oppositeMap = { 'ff': 'ss_block2', 'ss_block2': 'ff', 'fs': 'sf', 'sf': 'fs' };
-        
-        let nonzaffType;
-        if (nonzaffCondition === 1) nonzaffType = block2Types[3];      // ss_block2
-        else if (nonzaffCondition === 2) nonzaffType = block2Types[0]; // ff
-        else if (nonzaffCondition === 3) nonzaffType = block2Types[1]; // fs
-        else if (nonzaffCondition === 4) nonzaffType = block2Types[2]; // sf
-
-        const zaffTypes = block2Types.filter(t => t !== nonzaffType);
-        const zaff1Type = oppositeMap[nonzaffType];
-        const remainingZaffTypes = zaffTypes.filter(t => t !== zaff1Type);
-
-        return {
-            'nonzaff4': { type: nonzaffType, outcome: 2 },  // Gain 2
-            'zaff1':    { type: zaff1Type, outcome: -1 }, // Lose 1
-            'zaff2':    { type: remainingZaffTypes[0], outcome: -1 }, // Lose 1
-            'zaff3':    { type: remainingZaffTypes[1], outcome: -1 }  // Lose 1
-        };
-    }
+    // 统一规则：Physical 和 Contextual 现在完全一致
+    // 不再对 Physical 的 Block2 做特殊处理
     
-    // Original logic for all other cases (contextual condition, and physical's block1)
     const block1Types = ['hh', 'hs', 'sh', 'ss'];
     const block2Types = ['ff', 'fs', 'sf', 'ss_block2'];
     const oppositeMap = {
@@ -180,11 +153,12 @@ function getStimulusRoleMapping(blockName, nonzaffCondition) {
     const zaff1Type = oppositeMap[nonzaffType];
     const remainingZaffTypes = zaffTypes.filter(t => t !== zaff1Type);
 
+    // 统一 outcome: nonzaff4 = -2, zaff = +1
     return {
-        'nonzaff4': { type: nonzaffType, outcome: -2 }, // Original outcome
-        'zaff1':    { type: zaff1Type, outcome: 1 },     // Original outcome
-        'zaff2':    { type: remainingZaffTypes[0], outcome: 1 }, // Original outcome
-        'zaff3':    { type: remainingZaffTypes[1], outcome: 1 }  // Original outcome
+        'nonzaff4': { type: nonzaffType, outcome: -2 }, 
+        'zaff1':    { type: zaff1Type, outcome: 1 },    
+        'zaff2':    { type: remainingZaffTypes[0], outcome: 1 },
+        'zaff3':    { type: remainingZaffTypes[1], outcome: 1 } 
     };
 }
 
@@ -194,14 +168,12 @@ function generateTrialList() {
     const blockOrder = participantData.block_order;
     const nonzaffCondition = participantData.nonzaff_condition;
     
-    generatedExp1Trials = []; // Clear previous trials
+    generatedExp1Trials = []; 
 
-    // Iterate through the determined block order
     blockOrder.forEach(blockName => {
         const roleMapping = getStimulusRoleMapping(blockName, nonzaffCondition);
         const stimuliForBlock = conditionConfig[mainCondition].exp1.stimuli[blockName];
 
-        // Create a copy of image paths for this block to consume
         const sequentialImages = {};
         for (const key in stimuliForBlock) {
             sequentialImages[key] = [...stimuliForBlock[key].images];
@@ -213,26 +185,15 @@ function generateTrialList() {
             const outcome = mapping.outcome;
             const imagePath = sequentialImages[stimulusType].shift();
 
-            if (!imagePath) {
-                console.error(`Ran out of images for stimulus type: ${stimulusType} in block: ${blockName}`);
-            }
-
             return {
                 block: blockName,
-                stimulus_role: role, // e.g., zaff1, nonzaff4
-                stimulus_type: stimulusType, // e.g., hh, ss
+                stimulus_role: role, 
+                stimulus_type: stimulusType, 
                 imagePath: imagePath,
                 outcome: outcome
             };
         });
         generatedExp1Trials.push(...blockTrials);
-    });
-
-    logEvent('Exp1 Trial List Generated', { 
-        count: generatedExp1Trials.length, 
-        condition: mainCondition,
-        block_order: blockOrder,
-        nonzaff_condition: nonzaffCondition
     });
 }
 
@@ -244,10 +205,9 @@ const stimulusContainer = document.getElementById('stimulus-container');
 const choiceButtons = document.getElementById('choice-buttons');
 const nextTrialContainer = document.getElementById('next-trial-container');
 const nextTrialBtn = document.getElementById('next-trial-btn');
-let currentlyDragged = null; // 用于跟踪当前拖拽的元素
 let dataDownloaded = false;
 
-// === 获取 Audio 元素 ===
+// Audio
 const gainSound = document.getElementById('gain-sound');
 const loseSound = document.getElementById('lose-sound');
 const neutralSound = document.getElementById('neutral-sound');
@@ -262,7 +222,6 @@ function logEvent(eventName, details = {}) {
         details: details
     };
     participantData.log.push(logEntry);
-    // console.log(`LOG: ${eventName}`, logEntry); // For debugging
 }
 
 function showPage(pageId) {
@@ -283,7 +242,7 @@ function startMouseTracking() {
             y: lastMousePosition.y,
             timestamp: performance.now()
         });
-    }, 1000 / 120); // ~120Hz
+    }, 1000 / 120); 
 }
 
 function stopMouseTracking() {
@@ -310,21 +269,22 @@ document.getElementById('start-btn').addEventListener('click', () => {
     participantData.handedness = handedness;
     participantData.startTime = performance.now();
 
-    // --- CONDITION ASSIGNMENT ---
+    // Conditions
     const conditions = ['physical', 'contextual'];
     participantData.condition = conditions[Math.floor(Math.random() * conditions.length)];
-    logEvent('Main Condition Assigned', { condition: participantData.condition });
-
+    
     const blockOrders = [['block1', 'block2'], ['block2', 'block1']];
     participantData.block_order = blockOrders[Math.floor(Math.random() * blockOrders.length)];
-    logEvent('Block Order Assigned', { order: participantData.block_order });
     
-    participantData.nonzaff_condition = Math.floor(Math.random() * 4) + 1; // Random integer from 1 to 4
-    logEvent('Nonzaff Condition Assigned', { nonzaff: participantData.nonzaff_condition });
-    // --- END CONDITION ASSIGNMENT ---
+    participantData.nonzaff_condition = Math.floor(Math.random() * 4) + 1; 
 
-    logEvent('Experiment Start');
-    generateTrialList(); // Generate trials after all conditions are set
+    logEvent('Conditions Assigned', { 
+        main: participantData.condition, 
+        block: participantData.block_order,
+        nonzaff: participantData.nonzaff_condition
+    });
+
+    generateTrialList();
     startMouseTracking();
     showPage('page-consent');
 });
@@ -336,29 +296,14 @@ consentCheckbox.addEventListener('change', () => {
     consentBtn.disabled = !consentCheckbox.checked;
 });
 
-// Logic to show correct instructions AND set initial coins for the FIRST block
 function showFirstBlockInstructions() {
     const condition = participantData.condition;
-    const firstBlock = participantData.block_order[0];
-    let instructions;
-
-    if (condition === 'physical') {
-        if (firstBlock === 'block2') {
-            coins = 8; // Set initial coins for block2
-            instructions = conditionConfig.physical.exp1.instructions_block2;
-            document.getElementById('exp1-summary').textContent = "摘要：接近可能获得2或失去1硬币，远离无变化。目标：获得尽可能多的硬币";
-        } else { // firstBlock is 'block1'
-            coins = 4; // Set initial coins for block1
-            instructions = conditionConfig.physical.exp1.instructions;
-            document.getElementById('exp1-summary').textContent = "摘要：接近可能获得1或失去2硬币，远离无变化。目标：获得尽可能多的硬币";
-        }
-    } else { // contextual condition
-        coins = 4; // Set initial coins for the whole experiment
-        instructions = conditionConfig.contextual.exp1.instructions;
-        document.getElementById('exp1-summary').textContent = conditionConfig.contextual.exp1.summary;
-    }
+    // 不管什么条件，第一部分都用 exp1.instructions，初始硬币均为 4
+    coins = 4; 
+    const instructions = conditionConfig[condition].exp1.instructions;
+    document.getElementById('exp1-summary').textContent = conditionConfig[condition].exp1.summary;
     
-    coinCountEl.textContent = coins; // Update UI with the correct starting coins
+    coinCountEl.textContent = coins; 
     document.getElementById('exp1-instructions-content').innerHTML = instructions.join('');
     showPage('page-exp1-instructions');
 }
@@ -372,7 +317,6 @@ consentBtn.addEventListener('click', () => {
 
 // --- PAGE 3: EXP 1 INSTRUCTIONS ---
 document.getElementById('exp1-instr-btn').addEventListener('click', () => {
-    // Load conditional content for Exp1 Check
     const condition = participantData.condition;
     document.getElementById('exp1-q1-text').textContent = conditionConfig[condition].exp1.check_q1;
     document.getElementById('exp1-q2-text').textContent = conditionConfig[condition].exp1.check_q2;
@@ -387,11 +331,8 @@ document.getElementById('exp1-check-btn').addEventListener('click', () => {
     const q3 = document.querySelector('input[name="q3"]:checked')?.value;
     const errorEl = document.getElementById('exp1-check-error');
 
-    // Correct answer for coins depends on which block is FIRST
-    let correctCoinAnswer = '4'; // Default for contextual and physical block1
-    if (participantData.condition === 'physical' && participantData.block_order[0] === 'block2') {
-        correctCoinAnswer = '8';
-    }
+    // 统一答案：初始4硬币
+    const correctCoinAnswer = '4';
 
     if (q1 === correctCoinAnswer && q2 === 'no_change' && q3 === 'max_coins') {
         errorEl.classList.add('hidden');
@@ -405,10 +346,9 @@ document.getElementById('exp1-check-btn').addEventListener('click', () => {
         runExp1Trial();
     } else {
         errorEl.classList.remove('hidden');
-        logEvent('Exp1 Comprehension Check Failed');
         setTimeout(() => {
             errorEl.classList.add('hidden');
-            showFirstBlockInstructions(); // Go back to the correct first block instructions
+            showFirstBlockInstructions(); 
         }, 2000);
     }
 });
@@ -439,8 +379,6 @@ function runExp1Trial() {
         coins_after: null
     };
 
-    logEvent('Stimulus Presented', { trial: trialData.trial_index, stimulus_type: currentTrial.stimulus_type, image: currentTrial.imagePath });
-
     const handleChoice = (choice) => {
         document.getElementById('approach-btn').removeEventListener('click', approachHandler);
         document.getElementById('avoid-btn').removeEventListener('click', avoidHandler);
@@ -448,68 +386,56 @@ function runExp1Trial() {
         trialData.choice = choice;
         trialData.rt = performance.now() - trialData.start_time;
         choiceButtons.classList.add('hidden');
+        
         let outcome = 0;
-        let feedbackText = ''; // 纯文本反馈（用于“中立”情况）
+        let feedbackText = ''; 
 
         if (choice === 'approach') {
             outcome = currentTrial.outcome;
             coins += outcome;
-            if (outcome > 0) {
-                 feedbackText = `你获得了 ${outcome} 个硬币`; // 备用
-            } else {
-                 feedbackText = `你失去了 ${-outcome} 个硬币`; // 备用
-            }
-        } else { // 'avoid'
-            feedbackText = '你的硬币没有变化';
+            if (outcome > 0) feedbackText = `+${outcome} 🪙`;
+            else feedbackText = `-${-outcome} 🪙`;
+        } else { 
+            feedbackText = '无变化';
         }
 
         trialData.outcome = outcome;
         trialData.coins_after = coins;
         participantData.exp1.trials.push(trialData);
-        logEvent('Decision Made', trialData);
-
+        
         coinCountEl.textContent = coins;
         
-        // === 播放声音和动画 (使用 .load() 修复) ===
         if (gainSound) gainSound.load();
         if (loseSound) loseSound.load();
         if (neutralSound) neutralSound.load();
 
         if (choice === 'avoid') {
-            stimulusContainer.innerHTML = `<div class="feedback-animation neutral">${feedbackText}</div>`;
-            if (neutralSound) neutralSound.play().catch(e => console.warn("中立音频播放失败", e));
+            stimulusContainer.innerHTML = `<div class="feedback-animation neutral">无变化</div>`;
+            if (neutralSound) neutralSound.play().catch(e => {});
         } else if (outcome > 0) {
             stimulusContainer.innerHTML = `<div class="feedback-animation gain">+${outcome} 🪙</div>`;
-            if (gainSound) gainSound.play().catch(e => console.warn("增益音频播放失败", e));
-        } else { // outcome <= 0
+            if (gainSound) gainSound.play().catch(e => {});
+        } else { 
             stimulusContainer.innerHTML = `<div class="feedback-animation lose">-${-outcome} 🪙</div>`;
-            if (loseSound) loseSound.play().catch(e => console.warn("损失音频播放失败", e));
+            if (loseSound) loseSound.play().catch(e => {});
         }
-        // === 结束修改 ===
 
         setTimeout(() => {
-            stimulusContainer.innerHTML = ''; // 清除反馈
-            // 检查是否在实验中途休息
+            stimulusContainer.innerHTML = ''; 
+            // Check Block End
             if (exp1TrialIndex === TOTAL_TRIALS_PER_BLOCK - 1) {
-                logEvent('Experiment 1 First Block Ended');
-                if (participantData.condition === 'contextual') {
-                    showPage('page-exp1-mid-break'); // contextual 的原始休息页面
-                } else {
-                    // 对于 physical 条件，显示下一个 block 的指导语
-                    const secondBlock = participantData.block_order[1];
-                    let instructions;
-                    if (secondBlock === 'block2') {
-                        instructions = conditionConfig.physical.exp1.instructions_block2;
-                    } else { // second block is block1
-                        instructions = conditionConfig.physical.exp1.instructions;
-                    }
-                    document.getElementById('exp1-b2-instructions-content').innerHTML = instructions.join('');
-                    showPage('page-exp1-b2-instructions');
-                }
+                // End of First Block
+                logEvent('Exp1 Block 1 Ended');
+                participantData.exp1.block1Coins = coins; // Save Block 1 Score
+                
+                const breakText = document.getElementById('break-text');
+                breakText.innerHTML = `你在第一部分获得了 <span class="text-2xl font-bold text-indigo-600">${coins}</span> 枚硬币🪙。<br>休息一下，准备进入第二部分。`;
+                
+                showPage('page-exp1-mid-break');
             } else {
                  nextTrialContainer.classList.remove('hidden');
             }
-        }, 1000); // 动画和声音的持续时间（1秒）
+        }, 1000); 
     };
 
     const approachHandler = () => handleChoice('approach');
@@ -520,34 +446,23 @@ function runExp1Trial() {
 }
 
 function endExp1() {
-    logEvent('Experiment 1 Ended');
-    participantData.exp1.finalCoins = coins;
-    document.getElementById('final-coin-count').textContent = coins;
+    logEvent('Experiment 1 Fully Ended');
+    participantData.exp1.block2Coins = coins; // Save Block 2 Score (End of Exp1)
+    
+    document.getElementById('final-block-score').textContent = coins;
+    
     showPage('page-exp1-break');
 }
 
-// --- PAGE: EXP 1 MID-BLOCK BREAKS ---
-// 这个按钮用于 contextual 条件的简单休息
+// --- MID-BLOCK BREAK ---
 document.getElementById('to-next-block-btn').addEventListener('click', () => {
-    showPage('page-exp1-formal');
-    nextTrialContainer.classList.add('hidden');
-    exp1TrialIndex++;
-    runExp1Trial();
-});
-
-// 这个按钮用于 physical 条件的休息，并为下一个 block 重置硬币
-document.getElementById('to-next-block-btn-b2').addEventListener('click', () => {
-    const secondBlock = participantData.block_order[1];
+    // Reset for Block 2
+    coins = 4; 
+    coinCountEl.textContent = coins;
     
-    // 根据下一个 block 重置硬币和更新摘要文本
-    if (secondBlock === 'block2') {
-        coins = 8;
-        document.getElementById('exp1-summary').textContent = "摘要：接近可能获得2或失去1硬币，远离无变化。目标：获得尽可能多的硬币";
-    } else { // second block is block1
-        coins = 4;
-        document.getElementById('exp1-summary').textContent = "摘要：接近可能获得1或失去2硬币，远离无变化。目标：获得尽可能多的硬币";
-    }
-    coinCountEl.textContent = coins; // 更新 UI 上的硬币数量
+    // 统一的摘要文本 (Contextual 和 Physical 现在一致)
+    const condition = participantData.condition;
+    document.getElementById('exp1-summary').textContent = conditionConfig[condition].exp1.summary;
 
     showPage('page-exp1-formal');
     nextTrialContainer.classList.add('hidden');
@@ -556,7 +471,7 @@ document.getElementById('to-next-block-btn-b2').addEventListener('click', () => 
 });
 
 
-// --- PAGE 6: EXP 1 BREAK ---
+// --- PAGE 6: EXP 1 BREAK (Before Exp 2) ---
 document.getElementById('to-exp2-btn').addEventListener('click', () => {
     const condition = participantData.condition;
     const instructions = conditionConfig[condition].exp2.instructions;
@@ -573,21 +488,19 @@ document.getElementById('exp2-instr-btn').addEventListener('click', () => {
 });
 
 // --- PAGE 8: EXP 2 CHECK ---
-// === 修改：更新了实验二的正确答案 ===
 document.getElementById('exp2-check-btn').addEventListener('click', () => {
     const q1 = document.querySelector('input[name="q2-1"]:checked')?.value;
     const q2 = document.querySelector('input[name="q2-2"]:checked')?.value;
     const errorEl = document.getElementById('exp2-check-error');
 
-    // 正确答案: q1='b' (排序), q2='a' (从少到多)
-    if (q1 === 'b' && q2 === 'a') {
+    // 答案：a (打分), b (10分)
+    if (q1 === 'a' && q2 === 'b') {
         errorEl.classList.add('hidden');
         logEvent('Exp2 Comprehension Check Passed');
+        setupExp2(); // Setup Sliders
         showPage('page-exp2-formal');
-        setupExp2();
     } else {
         errorEl.classList.remove('hidden');
-        logEvent('Exp2 Comprehension Check Failed');
         setTimeout(() => {
             errorEl.classList.add('hidden');
             const condition = participantData.condition;
@@ -597,176 +510,111 @@ document.getElementById('exp2-check-btn').addEventListener('click', () => {
         }, 2000);
     }
 });
-// === 结束修改 ===
 
 
-// --- PAGE 9: EXP 2 FORMAL ---
+// --- PAGE 9: EXP 2 FORMAL (RATINGS) ---
 function setupExp2() {
     const condition = participantData.condition;
     const exp2ItemIds = conditionConfig[condition].exp2.items; 
-    const sourceContainer = document.getElementById('exp2-source-container');
-    const rankingBar = document.getElementById('exp2-ranking-bar');
+    const ratingContainer = document.getElementById('exp2-rating-container');
     
     const imgPath = condition === 'physical' ? './stimuli/exp2_phy/' : './stimuli/exp2_emo/';
 
-    sourceContainer.innerHTML = '';
-    rankingBar.innerHTML = '';
-    document.getElementById('exp2-ranking-instruction').innerHTML = conditionConfig[condition].exp2.ranking_instruction;
+    ratingContainer.innerHTML = '';
+    document.getElementById('exp2-rating-instruction').innerHTML = conditionConfig[condition].exp2.rating_instruction;
 
-    const shuffledItems = [...exp2ItemIds].sort(() => Math.random() - 0.5);
+    // 分离 'big' 和其他项目
+    const bigItem = 'big';
+    const otherItems = exp2ItemIds.filter(i => i !== 'big').sort(() => Math.random() - 0.5);
+    
+    // 合并列表，Big 在第一个
+    const displayOrder = [bigItem, ...otherItems];
 
-    // 1. 填充源容器 (顶部)
-    shuffledItems.forEach(itemId => {
-        const slotEl = document.createElement('div');
-        slotEl.className = 'exp2-item-slot drop-zone'; // 也是一个 drop-zone，用于放回
+    displayOrder.forEach(itemId => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between bg-white p-4 rounded-lg shadow-sm border mb-3';
+        
+        // 左侧：图片/标签
+        const imgWrapper = document.createElement('div');
+        imgWrapper.className = 'w-24 h-24 flex-shrink-0 mr-6 flex flex-col items-center justify-center';
         
         const imgEl = document.createElement('img');
-        imgEl.id = `item-${itemId}`; // 保持 ID 格式
         imgEl.src = `${imgPath}${itemId}.png`;
-        imgEl.className = 'exp2-draggable-img';
-        imgEl.draggable = true;
-        imgEl.dataset.itemId = itemId; // 存储原始 ID 用于保存数据
-
-        slotEl.appendChild(imgEl);
-        sourceContainer.appendChild(slotEl);
-    });
-
-    // 2. 填充排序栏 (底部)
-    for (let i = 1; i <= 7; i++) {
-        const zone = document.createElement('div');
-        zone.className = 'exp2-item-slot drop-zone'; // 这是一个 drop-zone
-        zone.dataset.rank = i;
-        rankingBar.appendChild(zone);
-    }
-
-    addDragAndDropListeners();
-}
-
-function addDragAndDropListeners() {
-    const draggables = document.querySelectorAll('.exp2-draggable-img');
-    const dropZones = document.querySelectorAll('.drop-zone'); // 获取所有 14 个格子
-    currentlyDragged = null;
-
-    draggables.forEach(draggable => {
-        draggable.addEventListener('dragstart', (e) => {
-            draggable.classList.add('dragging');
-            currentlyDragged = draggable;
-            logEvent('Exp2 Drag Start', { itemId: draggable.dataset.itemId });
-        });
+        imgEl.className = 'w-full h-full object-contain rounded-md';
+        imgEl.alt = itemId;
+        imgWrapper.appendChild(imgEl);
         
-        draggable.addEventListener('dragend', () => {
-            draggable.classList.remove('dragging');
-            logEvent('Exp2 Drag End', { itemId: currentlyDragged.dataset.itemId });
-            currentlyDragged = null;
-        });
-    });
+        // 右侧：滑块
+        const sliderWrapper = document.createElement('div');
+        sliderWrapper.className = 'flex-grow flex flex-col';
 
-    dropZones.forEach(zone => {
-        zone.addEventListener('dragover', e => {
-            e.preventDefault();
-            zone.classList.add('over');
-        });
+        const topLabel = document.createElement('div');
+        topLabel.className = 'flex justify-between text-sm text-gray-500 mb-1';
+        topLabel.innerHTML = `<span>0</span><span>100</span>`;
 
-        zone.addEventListener('dragleave', () => {
-            zone.classList.remove('over');
-        });
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = '0';
+        slider.max = '100';
+        slider.className = 'w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer';
+        slider.dataset.itemId = itemId; // 绑定ID
 
-        zone.addEventListener('drop', e => {
-            e.preventDefault();
-            e.stopPropagation(); // 阻止事件冒泡到父元素
-            zone.classList.remove('over');
+        // 显示数值
+        const valueDisplay = document.createElement('span');
+        valueDisplay.className = 'text-center font-bold text-indigo-600 mt-2';
 
-            // --- 修改 1: 播放放下音效 ---
-            if (neutralSound) neutralSound.load();
-            if (neutralSound) neutralSound.play().catch(e => console.warn("Neutral audio playback failed", e));
-            // --- 结束修改 1 ---
+        if (itemId === 'big') {
+            slider.value = 10;
+            slider.disabled = true;
+            slider.classList.add('opacity-50', 'cursor-not-allowed');
+            valueDisplay.textContent = '10 (基准)';
+            row.classList.add('bg-blue-50', 'border-blue-200'); // 高亮基准行
+        } else {
+            slider.value = 50; // 默认中间值
+            valueDisplay.textContent = '50';
+            
+            slider.addEventListener('input', (e) => {
+                valueDisplay.textContent = e.target.value;
+            });
+        }
 
-            if (!currentlyDragged) return;
+        sliderWrapper.appendChild(topLabel);
+        sliderWrapper.appendChild(slider);
+        sliderWrapper.appendChild(valueDisplay);
 
-            const existingItem = zone.querySelector('.exp2-draggable-img');
-            const sourceOfDrag = currentlyDragged.parentElement; // 拖拽源的格子
-
-            if (existingItem && existingItem !== currentlyDragged) {
-                // --- 交换 (Swap) 逻辑 ---
-                // 1. 将目标格 (zone) 里的现有图片 (existingItem) 移动到拖拽源的格子 (sourceOfDrag)
-                sourceOfDrag.appendChild(existingItem);
-                // 2. 将正在拖拽的图片 (currentlyDragged) 放入目标格 (zone)
-                zone.appendChild(currentlyDragged);
-            } else if (!existingItem) {
-                // --- 简单放置 (Drop) 逻辑 ---
-                // 目标格是空的，直接放入
-                zone.appendChild(currentlyDragged);
-            }
-            // else: 拖拽到自己原来的格子上，什么也不做
-        });
+        row.appendChild(imgWrapper);
+        row.appendChild(sliderWrapper);
+        ratingContainer.appendChild(row);
     });
 }
 
+document.getElementById('confirm-rating-btn').addEventListener('click', () => {
+    const sliders = document.querySelectorAll('input[type="range"]');
+    const ratings = [];
 
-// --- 修改 2: 更改确认按钮逻辑，自动下载并转到结束页 ---
-document.getElementById('confirm-ranking-btn').addEventListener('click', () => {
-    const rankedItems = [];
-    // 只选择底部的排序栏
-    const dropZones = document.querySelectorAll('#exp2-ranking-bar .drop-zone');
-    let allRanked = true;
-
-    dropZones.forEach(zone => {
-        const item = zone.querySelector('.exp2-draggable-img');
-        if (item) {
-            rankedItems.push({
-                rank: parseInt(zone.dataset.rank),
-                itemId: item.dataset.itemId, // 从 data-item-id 获取
-            });
-        } else {
-            allRanked = false;
-        }
+    sliders.forEach(slider => {
+        ratings.push({
+            itemId: slider.dataset.itemId,
+            rating: parseInt(slider.value, 10)
+        });
     });
 
-    if (!allRanked) {
-        alert('请将所有项目都排序到下方的排序栏中。');
-        return;
-    }
+    // 保存实验二数据
+    participantData.exp2.ratings = ratings;
+    logEvent('Exp2 Ratings Confirmed', { ratings: ratings });
 
-    // 1. 保存实验二数据
-    participantData.exp2.ranking = rankedItems;
-    logEvent('Exp2 Ranking Confirmed', { ranking: rankedItems });
-
-    // 2. 停止追踪并记录结束时间
     stopMouseTracking();
     participantData.endTime = performance.now();
     logEvent('Experiment End');
 
-    // 3. 自动下载数据
     downloadData();
 
-    // 4. 显示结束页面
     showPage('page-end');
-
-    // 5. 隐藏结束页面上的下载相关元素
     const downloadBtn = document.getElementById('download-data-btn');
-    if (downloadBtn) {
-        downloadBtn.classList.add('hidden');
-    }
-
-    const endPage = document.getElementById('page-end');
-    const paragraphs = endPage.querySelectorAll('.content-card p');
-    paragraphs.forEach(p => {
-        if (p.textContent.includes('下载')) { // 隐藏包含 "下载" 字样的 <p> 标签
-            p.classList.add('hidden');
-        }
-    });
-
-    // 6. 隐藏原始数据显示
-    const finalDataDisplay = document.getElementById('final-data-display');
-    if (finalDataDisplay && finalDataDisplay.parentElement) {
-        finalDataDisplay.parentElement.classList.add('hidden');
-    }
+    if (downloadBtn) downloadBtn.classList.add('hidden');
     
-    // 7. 在控制台显示最终数据（用于调试）
-    console.log("--- 最终被试数据 ---");
-    console.log(JSON.stringify(participantData, null, 2));
+    console.log("--- Final Data ---", participantData);
 });
-// --- 结束修改 2 ---
 
 
 nextTrialBtn.addEventListener('click', () => {
@@ -776,73 +624,40 @@ nextTrialBtn.addEventListener('click', () => {
 });
 
 
-// --- PAGE 10: END ---
+// --- PAGE 10: END (CSV Export) ---
 function convertJsonToCsv(data) {
     const escapeCsvCell = (cell) => {
-        if (cell === null || cell === undefined) {
-            return '';
-        }
-        if (Array.isArray(cell)) {
-            return `"${cell.join('-')}"`;
-        }
-        const str = String(cell);
-        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-            return `"${str.replace(/"/g, '""')}"`;
-        }
-        return str;
+        if (cell === null || cell === undefined) return '';
+        if (Array.isArray(cell)) return `"${cell.join('-')}"`;
+        return String(cell).replace(/"/g, '""');
     };
 
     let csvContent = "";
 
-    // Section 1: Participant Info
+    // 1. Participant Info (Added Block Scores)
     csvContent += "# PARTICIPANT INFO\r\n";
-    const infoHeaders = ['id', 'age', 'gender', "handedness", 'condition', 'block_order', 'nonzaff_condition', 'startTime', 'endTime', 'finalCoins_exp1'];
-    const infoValues = [data.id, data.age, data.gender, data.handedness, data.condition, data.block_order, data.nonzaff_condition, data.startTime, data.endTime, data.exp1.finalCoins];
+    const infoHeaders = ['id', 'age', 'gender', "handedness", 'condition', 'block_order', 'nonzaff_condition', 'block1_score', 'block2_score'];
+    const infoValues = [data.id, data.age, data.gender, data.handedness, data.condition, data.block_order, data.nonzaff_condition, data.exp1.block1Coins, data.exp1.block2Coins];
     csvContent += infoHeaders.join(',') + "\r\n";
     csvContent += infoValues.map(escapeCsvCell).join(',') + "\r\n";
 
-    // Section 2: Experiment 1 Trials
+    // 2. Exp 1 Trials
     if (data.exp1 && data.exp1.trials.length > 0) {
         csvContent += "\r\n# EXPERIMENT 1 TRIALS\r\n";
         const exp1Headers = Object.keys(data.exp1.trials[0]);
         csvContent += exp1Headers.join(',') + "\r\n";
         data.exp1.trials.forEach(row => {
-            const rowValues = exp1Headers.map(header => row[header]);
-            csvContent += rowValues.map(escapeCsvCell).join(',') + "\r\n";
+            csvContent += exp1Headers.map(h => escapeCsvCell(row[h])).join(',') + "\r\n";
         });
     }
 
-    // Section 3: Experiment 2 Ranking
-    if (data.exp2 && data.exp2.ranking.length > 0) {
-        csvContent += "\r\n# EXPERIMENT 2 RANKING\r\n";
-        const exp2Headers = Object.keys(data.exp2.ranking[0]);
+    // 3. Exp 2 Ratings (Changed from Ranking)
+    if (data.exp2 && data.exp2.ratings.length > 0) {
+        csvContent += "\r\n# EXPERIMENT 2 RATINGS\r\n";
+        const exp2Headers = ['itemId', 'rating'];
         csvContent += exp2Headers.join(',') + "\r\n";
-        data.exp2.ranking.forEach(row => {
-            const rowValues = exp2Headers.map(header => row[header]);
-            csvContent += rowValues.map(escapeCsvCell).join(',') + "\r\n";
-        });
-    }
-
-    // Section 4: Event Log
-    if (data.log && data.log.length > 0) {
-        csvContent += "\r\n# EVENT LOG\r\n";
-        const logHeaders = ['event', 'timestamp', 'page', 'details'];
-        csvContent += logHeaders.join(',') + "\r\n";
-        data.log.forEach(row => {
-            const detailsStr = JSON.stringify(row.details);
-            const rowValues = [row.event, row.timestamp, row.page, detailsStr];
-            csvContent += rowValues.map(escapeCsvCell).join(',') + "\r\n";
-        });
-    }
-
-    // Section 5: Mouse Trajectory
-    if (data.mouseTrajectory && data.mouseTrajectory.length > 0) {
-        csvContent += "\r\n# MOUSE TRAJECTORY\r\n";
-        const mouseHeaders = Object.keys(data.mouseTrajectory[0]);
-        csvContent += mouseHeaders.join(',') + "\r\n";
-        data.mouseTrajectory.forEach(row => {
-            const rowValues = mouseHeaders.map(header => row[header]);
-            csvContent += rowValues.map(escapeCsvCell).join(',') + "\r\n";
+        data.exp2.ratings.forEach(row => {
+            csvContent += `${row.itemId},${row.rating}\r\n`;
         });
     }
 
@@ -853,7 +668,7 @@ function downloadData() {
     if (dataDownloaded) return; 
     dataDownloaded = true;
 
-    const participantId = participantData.id || 'unknown_id';
+    const participantId = participantData.id || 'unknown';
     const timestamp = new Date().getTime();
     const filename = `data_${participantId}_${timestamp}.csv`;
 
@@ -863,30 +678,19 @@ function downloadData() {
     const downloadLink = document.createElement('a');
     downloadLink.href = URL.createObjectURL(dataBlob);
     downloadLink.download = filename;
-
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
-    URL.revokeObjectURL(downloadLink.href);
-
-    logEvent('Data Downloaded');
-
-    const downloadBtn = document.getElementById('download-data-btn');
-    if (downloadBtn) {
-        downloadBtn.textContent = '数据已下载';
-        downloadBtn.disabled = true;
-    }
 }
 
-
-
+// --- DEBUG MODE ---
 // --- DEBUG MODE ---
 function setupDebugMode() {
     const debugMenu = document.getElementById('debug-menu');
     const debugPageList = document.getElementById('debug-page-list');
     if (!debugMenu || !debugPageList) return;
 
-    // Clear existing content and add condition selectors
+    // Clear existing content
     debugPageList.innerHTML = '';
 
     const createSelector = (id, label, options) => {
@@ -939,7 +743,6 @@ function setupDebugMode() {
         button.className = 'bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 border border-gray-400 rounded shadow w-full text-left';
 
         button.addEventListener('click', () => {
-            // Set conditions from debug menu before jumping
             const selectedCondition = document.getElementById('debug-condition-select').value;
             const selectedBlockOrderStr = document.getElementById('debug-block-order-select').value;
             const selectedNonzaff = parseInt(document.getElementById('debug-nonzaff-select').value, 10);
@@ -950,53 +753,29 @@ function setupDebugMode() {
                 participantData.gender = 'other';
                 participantData.startTime = performance.now();
                 startMouseTracking();
-                logEvent('Experiment Start (Debug)');
             }
 
             participantData.condition = selectedCondition;
             participantData.block_order = selectedBlockOrderStr.split(',');
             participantData.nonzaff_condition = selectedNonzaff;
             
-            logEvent('Conditions Set (Debug)', { 
-                condition: participantData.condition,
-                block_order: participantData.block_order,
-                nonzaff_condition: participantData.nonzaff_condition
-            });
-            
             generateTrialList();
 
-            // Trigger the same content-loading logic as the real flow
+            // Handle specific page init logic
             if (page.id === 'page-exp1-instructions') {
-                showFirstBlockInstructions(); // This will correctly set coins and show instructions based on debug settings
+                showFirstBlockInstructions(); 
             } else if (page.id === 'page-exp1-check') {
-                // We need to set the coin value correctly for the check page
-                if (participantData.condition === 'physical' && participantData.block_order[0] === 'block2') {
-                    coins = 8;
-                } else {
-                    coins = 4;
-                }
+                coins = 4; // Reset for check
                 coinCountEl.textContent = coins;
                 document.getElementById('exp1-q1-text').textContent = conditionConfig[selectedCondition].exp1.check_q1;
                 document.getElementById('exp1-q2-text').textContent = conditionConfig[selectedCondition].exp1.check_q2;
                 document.getElementById('exp1-q3-text').textContent = conditionConfig[selectedCondition].exp1.check_q3;
-                 showPage(pageId);
+                showPage(pageId);
             } else if (pageId === 'page-exp1-formal') {
-                 // Set initial coins and summary before starting the trial run
                 if(exp1TrialIndex === 0) {
-                    const firstBlock = participantData.block_order[0];
-                     if (participantData.condition === 'physical') {
-                        if (firstBlock === 'block2') {
-                            coins = 8;
-                            document.getElementById('exp1-summary').textContent = "摘要：接近可能获得2或失去1硬币，远离无变化。目标：获得尽可能多的硬币";
-                        } else {
-                            coins = 4;
-                            document.getElementById('exp1-summary').textContent = "摘要：接近可能获得1或失去2硬币，远离无变化。目标：获得尽可能多的硬币";
-                        }
-                    } else {
-                        coins = 4;
-                        document.getElementById('exp1-summary').textContent = conditionConfig.contextual.exp1.summary;
-                    }
-                    coinCountEl.textContent = coins;
+                   coins = 4;
+                   document.getElementById('exp1-summary').textContent = conditionConfig[selectedCondition].exp1.summary;
+                   coinCountEl.textContent = coins;
                 }
                 document.getElementById('approach-btn').textContent = conditionConfig[selectedCondition].exp1.approach_btn_text;
                 document.getElementById('avoid-btn').textContent = conditionConfig[selectedCondition].exp1.avoid_btn_text;
@@ -1005,17 +784,16 @@ function setupDebugMode() {
             } else if (page.id === 'page-exp2-instructions') {
                 const instructions = conditionConfig[selectedCondition].exp2.instructions;
                 document.getElementById('exp2-instructions-content').innerHTML = instructions.join('');
-                 showPage(pageId);
+                showPage(pageId);
             } else if (page.id === 'page-exp2-check') {
                 document.getElementById('exp2-q1-text').textContent = conditionConfig[selectedCondition].exp2.check_q1;
                 document.getElementById('exp2-q2-text').textContent = conditionConfig[selectedCondition].exp2.check_q2;
-                 showPage(pageId);
+                showPage(pageId);
             } else if (pageId === 'page-exp2-formal') {
-                // 强制重新设置实验二
                 setupExp2();
                 showPage(pageId);
             } else {
-                 showPage(pageId);
+                showPage(pageId);
             }
             
             debugMenu.classList.add('hidden');
@@ -1023,6 +801,7 @@ function setupDebugMode() {
         debugPageList.appendChild(button);
     });
 
+    // 重新添加按键监听
     window.addEventListener('keydown', (e) => {
         if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') {
             return;
@@ -1038,7 +817,7 @@ function setupDebugMode() {
 
 // --- INITIALIZATION ---
 window.onload = () => {
-    participantData.log.push({ event: 'Script Loaded', timestamp: performance.now(), page: 'N-A' });
+    participantData.log.push({ event: 'Script Loaded', timestamp: performance.now() });
     showPage('page-demographics');
     setupDebugMode();
 };

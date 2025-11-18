@@ -18,30 +18,67 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 3rem;
+            font-size: 3rem; /* 48px */
             font-weight: bold;
             animation: feedback-anim 1s ease-in-out forwards;
         }
-        .feedback-animation.gain { color: #16a34a; }
-        .feedback-animation.lose { color: #dc2626; }
-        .feedback-animation.neutral { font-size: 1.875rem; color: #6b7280; }
-
-        /* Slider Thumb Styling (Optional enhancement) */
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 20px;
-            width: 20px;
-            border-radius: 50%;
-            background: #4f46e5;
-            cursor: pointer;
-            margin-top: -6px; 
+        .feedback-animation.gain {
+            color: #16a34a; /* Tailwind green-600 */
         }
-        input[type=range]::-webkit-slider-runnable-track {
+        .feedback-animation.lose {
+            color: #dc2626; /* Tailwind red-600 */
+        }
+        .feedback-animation.neutral {
+            font-size: 1.875rem; /* 30px */
+            color: #6b7280; /* Tailwind gray-500 */
+        }
+
+        /* Exp2 Rating Styles */
+        .rating-row {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            background-color: white;
+        }
+        .rating-row:last-child {
+            border-bottom: none;
+        }
+        .stimulus-col {
+            width: 150px;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .stimulus-img {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: contain;
+            border-radius: 0.5rem;
+        }
+        .slider-col {
+            flex-grow: 1;
+            padding-left: 2rem;
+            padding-right: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .slider-val {
+            width: 3rem;
+            text-align: center;
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        /* Range Input Customization */
+        input[type=range] {
             width: 100%;
-            height: 8px;
             cursor: pointer;
-            background: #e5e7eb;
-            border-radius: 4px;
+        }
+        input[type=range]:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
         }
     </style>
 
@@ -87,7 +124,8 @@
         <div class="content-card">
             <h1 class="text-2xl font-bold mb-6">知情同意书</h1>
             <div class="text-left space-y-4 max-h-96 overflow-y-auto p-4 border rounded-md bg-gray-50">
-                <p>1. 实验过程：您将参与两个部分的任务。第一部分是模拟决策任务，第二部分是打分任务。整个实验大约需要10-15分钟。</p>
+                <p>这里是知情同意书的详细内容...</p>
+                <p>1. 实验过程：您将参与两个部分的任务。第一部分是模拟决策任务，第二部分是对抽象概念进行评分的任务。整个实验大约需要10-15分钟。</p>
                 <p>2. 风险与不适：本实验不存在已知的生理或心理风险。</p>
                 <p>3. 隐私保护：您的个人信息将被严格保密。所有数据将以匿名形式进行处理和分析，仅用于科学研究目的。</p>
                 <p>4. 自由退出：您可以随时无理由地退出实验，且不会有任何负面影响。</p>
@@ -104,7 +142,8 @@
     <div id="page-exp1-instructions" class="page hidden">
         <div class="content-card">
             <h1 class="text-2xl font-bold mb-6">实验一：指导语</h1>
-            <div id="exp1-instructions-content" class="text-left space-y-4"></div>
+            <div id="exp1-instructions-content" class="text-left space-y-4">
+                </div>
             <button id="exp1-instr-btn" class="btn mt-8">我明白了，检查一下</button>
         </div>
     </div>
@@ -119,6 +158,7 @@
                         <div><label><input type="radio" name="q1" value="0"> 0</label></div>
                         <div><label><input type="radio" name="q1" value="4"> 4</label></div>
                         <div><label><input type="radio" name="q1" value="8"> 8</label></div>
+                        <div><label><input type="radio" name="q1" value="10"> 10</label></div>
                     </div>
                 </div>
                 <div class="question-group">
@@ -134,6 +174,7 @@
                     <div class="space-y-2 mt-2">
                         <div><label><input type="radio" name="q3" value="fast"> 尽快完成</label></div>
                         <div><label><input type="radio" name="q3" value="max_coins"> 获得尽可能多的硬币</label></div>
+                        <div><label><input type="radio" name="q3" value="min_coins"> 获得尽可能少的硬币</label></div>
                     </div>
                 </div>
             </div>
@@ -144,36 +185,51 @@
 
     <div id="page-exp1-formal" class="page hidden">
         <div class="content-card !max-w-6xl min-h-[93vh] flex flex-col">
+
             <div id="choice-buttons" class="w-full flex justify-between pb-2 px-4">
                 <button id="approach-btn" class="btn"></button>
                 <button id="avoid-btn" class="btn"></button>
             </div>
+
             <div class="flex-1 w-full relative flex justify-center items-center">
-                <div id="stimulus-container" class="w-11/12 bg-gray-200 rounded-lg flex justify-center items-center text-gray-500 text-xl font-semibold" style="aspect-ratio: 16 / 9;"></div>
+                <div id="stimulus-container" class="w-11/12 bg-gray-200 rounded-lg flex justify-center items-center text-gray-500 text-xl font-semibold" style="aspect-ratio: 16 / 9;">
+                    </div>
                 <div id="next-trial-container" class="absolute inset-0 flex justify-center items-end pb-8 hidden">
                     <button id="next-trial-btn" class="btn">下一轮</button>
                 </div>
             </div>
+
             <div class="w-full flex justify-between items-center mt-2">
                 <p id="exp1-summary" class="text-lg text-gray-800"></p>
                 <p class="text-lg font-bold">当前硬币🪙: <span id="coin-count">4</span></p>
             </div>
+
         </div>
     </div>
 
     <div id="page-exp1-mid-break" class="page hidden">
         <div class="content-card">
-            <h1 class="text-2xl font-bold mb-6">第一部分完成</h1>
-            <p id="break-text" class="text-lg mb-8"></p>
-            <button id="to-next-block-btn" class="btn">开始第二部分</button>
+            <h1 class="text-2xl font-bold mb-6">第一部分已完成</h1>
+            <p class="text-lg font-bold mb-4">你做得很好！你在第一部分获得了 <span id="block1-score" class="text-blue-600 text-2xl"></span> 枚硬币🪙</p>
+            <p class="text-gray-600 mb-8">休息一下。在下一部分开始时，你的硬币数量将重新重置为 <strong>4枚</strong>。</p>
+            <button id="to-next-block-btn" class="btn">继续下一部分</button>
+        </div>
+    </div>
+
+    <div id="page-exp1-b2-instructions" class="page hidden">
+        <div class="content-card">
+            <h1 class="text-2xl font-bold mb-6">第二部分：指导语</h1>
+            <div id="exp1-b2-instructions-content" class="text-left space-y-4">
+            </div>
+            <button id="to-next-block-btn-b2" class="btn mt-8">开始第二部分</button>
         </div>
     </div>
 
     <div id="page-exp1-break" class="page hidden">
         <div class="content-card">
             <h1 class="text-2xl font-bold mb-6">实验一结束</h1>
-            <p class="text-lg mb-4">你在第二部分获得了 <span id="final-block-score" class="font-bold"></span> 枚硬币。</p>
-            <p class="text-gray-600 mb-8">休息一下，准备进入实验二。</p>
+            <p class="text-lg mb-2">你在第二部分获得了 <span id="block2-score" class="text-blue-600 font-bold text-xl"></span> 个硬币。</p>
+            <p class="text-gray-600 mb-8">实验一全部结束。休息一下，准备好后请点击按钮继续实验二。</p>
             <button id="to-exp2-btn" class="btn">继续实验二</button>
         </div>
     </div>
@@ -181,7 +237,8 @@
     <div id="page-exp2-instructions" class="page hidden">
         <div class="content-card">
             <h1 class="text-2xl font-bold mb-6">实验二：指导语</h1>
-            <div id="exp2-instructions-content" class="text-left space-y-4"></div>
+            <div id="exp2-instructions-content" class="text-left space-y-4">
+                </div>
             <button id="exp2-instr-btn" class="btn mt-8">我明白了，检查一下</button>
         </div>
     </div>
@@ -193,16 +250,17 @@
                 <div class="question-group">
                     <p id="exp2-q1-text" class="font-semibold"></p> 
                     <div class="space-y-2 mt-2">
-                        <div><label><input type="radio" name="q2-1" value="a"> 以“Big”为基准对其他方式进行打分</label></div>
+                        <div><label><input type="radio" name="q2-1" value="a"> 以“big”为基准（10分），对其他方式进行打分</label></div>
                         <div><label><input type="radio" name="q2-1" value="b"> 对七种方式按消耗魔力的多少排序</label></div>
+                        <div><label><input type="radio" name="q2-1" value="c"> 随意拖动滑块</label></div>
                     </div>
                 </div>
                 <div class="question-group">
                     <p id="exp2-q2-text" class="font-semibold"></p> 
                     <div class="space-y-2 mt-2">
-                        <div><label><input type="radio" name="q2-2" value="a"> 50分</label></div>
-                        <div><label><input type="radio" name="q2-2" value="b"> 10分</label></div>
-                        <div><label><input type="radio" name="q2-2" value="c"> 100分</label></div>
+                        <div><label><input type="radio" name="q2-2" value="a"> 100分</label></div>
+                        <div><label><input type="radio" name="q2-2" value="b"> 50分</label></div>
+                        <div><label><input type="radio" name="q2-2" value="c"> 10分</label></div>
                     </div>
                 </div>
             </div>
@@ -211,29 +269,35 @@
         </div>
     </div>
 
+
     <div id="page-exp2-formal" class="page hidden">
         <div class="content-card !max-w-4xl">
-             <p id="exp2-rating-instruction" class="text-md text-gray-600 mb-6 text-center sticky top-0 bg-white py-2 z-10"></p>
+             <p id="exp2-rating-instruction" class="text-md text-gray-600 mb-6 text-center"></p>
             
-            <div id="exp2-rating-container" class="w-full flex flex-col gap-4 overflow-y-auto max-h-[70vh] px-2">
-                </div>
+             <div id="exp2-rating-container" class="w-full border rounded-lg overflow-hidden bg-gray-50 mb-8">
+                 </div>
 
-            <button id="confirm-rating-btn" class="btn mt-6">确认并提交</button>
+            <button id="confirm-rating-btn" class="btn mt-4">提交打分</button>
         </div>
     </div>
-
     <div id="page-end" class="page hidden">
         <div class="content-card">
             <h1 class="text-3xl font-bold text-green-600 mb-6">实验结束</h1>
             <p class="text-lg">感谢您的参与！</p>
-            <p class="text-gray-600 my-4">数据已自动下载。</p>
-            <button id="download-data-btn" class="btn">手动下载数据</button>
+            <p class="text-gray-600 my-4">您可以点击下方按钮或按键盘上任意键下载您的实验数据。</p>
+            <button id="download-data-btn" class="btn">下载数据</button>
+            <p class="text-sm text-gray-500 mt-8">您可以关闭此页面。所有数据已记录。</p>
+            <div class="mt-8 text-left max-h-96 overflow-y-auto bg-gray-50 p-4 rounded-md border hidden">
+                <h3 class="font-bold mb-2">原始数据 (JSON)</h3>
+                <pre id="final-data-display" class="text-xs whitespace-pre-wrap"></pre>
+            </div>
         </div>
     </div>
 
     <div id="debug-menu" class="hidden fixed top-4 left-4 bg-white p-4 rounded-lg shadow-xl z-50 border">
         <h3 class="font-bold mb-2 text-gray-800">调试菜单 (按 'm' 键切换)</h3>
-        <div id="debug-page-list" class="flex flex-col gap-2 items-start"></div>
+        <div id="debug-page-list" class="flex flex-col gap-2 items-start">
+            </div>
     </div>
 
     <audio id="gain-sound" src="sounds/gain.mp3" preload="auto"></audio>

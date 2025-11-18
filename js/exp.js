@@ -634,10 +634,10 @@ function convertJsonToCsv(data) {
 
     let csvContent = "";
 
-    // 1. Participant Info (Added Block Scores)
+    // 1. Participant Info
     csvContent += "# PARTICIPANT INFO\r\n";
-    const infoHeaders = ['id', 'age', 'gender', "handedness", 'condition', 'block_order', 'nonzaff_condition', 'block1_score', 'block2_score'];
-    const infoValues = [data.id, data.age, data.gender, data.handedness, data.condition, data.block_order, data.nonzaff_condition, data.exp1.block1Coins, data.exp1.block2Coins];
+    const infoHeaders = ['id', 'age', 'gender', "handedness", 'condition', 'block_order', 'nonzaff_condition', 'block1_score', 'block2_score', 'startTime', 'endTime'];
+    const infoValues = [data.id, data.age, data.gender, data.handedness, data.condition, data.block_order, data.nonzaff_condition, data.exp1.block1Coins, data.exp1.block2Coins, data.startTime, data.endTime];
     csvContent += infoHeaders.join(',') + "\r\n";
     csvContent += infoValues.map(escapeCsvCell).join(',') + "\r\n";
 
@@ -651,13 +651,36 @@ function convertJsonToCsv(data) {
         });
     }
 
-    // 3. Exp 2 Ratings (Changed from Ranking)
+    // 3. Exp 2 Ratings
     if (data.exp2 && data.exp2.ratings.length > 0) {
         csvContent += "\r\n# EXPERIMENT 2 RATINGS\r\n";
         const exp2Headers = ['itemId', 'rating'];
         csvContent += exp2Headers.join(',') + "\r\n";
         data.exp2.ratings.forEach(row => {
             csvContent += `${row.itemId},${row.rating}\r\n`;
+        });
+    }
+
+    // 4. Event Log (建议保留，用于排查问题)
+    if (data.log && data.log.length > 0) {
+        csvContent += "\r\n# EVENT LOG\r\n";
+        const logHeaders = ['event', 'timestamp', 'page', 'details'];
+        csvContent += logHeaders.join(',') + "\r\n";
+        data.log.forEach(row => {
+            const detailsStr = JSON.stringify(row.details).replace(/"/g, '""'); // Escape JSON quotes for CSV
+            const rowValues = [row.event, row.timestamp, row.page, `"${detailsStr}"`];
+            csvContent += rowValues.join(',') + "\r\n";
+        });
+    }
+
+    // 5. Mouse Trajectory (补回的部分)
+    if (data.mouseTrajectory && data.mouseTrajectory.length > 0) {
+        csvContent += "\r\n# MOUSE TRAJECTORY\r\n";
+        // 采样数据量可能很大，直接取第一个点的 keys 作为表头
+        const mouseHeaders = Object.keys(data.mouseTrajectory[0]);
+        csvContent += mouseHeaders.join(',') + "\r\n";
+        data.mouseTrajectory.forEach(row => {
+            csvContent += mouseHeaders.map(h => row[h]).join(',') + "\r\n";
         });
     }
 
